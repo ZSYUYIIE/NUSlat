@@ -59,29 +59,31 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 via-white to-emerald-50 px-4 py-12">
-      <div className="w-full max-w-md">
+    <div className="flex min-h-screen items-center justify-center bg-[#F5F5F7] px-4 py-12">
+      <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="mb-8 text-center">
           <div className="mb-3 flex justify-center">
             <span className="text-5xl">🦜</span>
           </div>
-          <h1 className="text-3xl font-extrabold text-green-600">NUSlat</h1>
-          <p className="mt-1 text-gray-500">
-            Start your vocabulary journey today!
+          <h1 className="text-2xl font-semibold tracking-tight text-[#1D1D1F]">
+            NUSlat
+          </h1>
+          <p className="mt-1 text-sm text-neutral-500">
+            Start your vocabulary journey today
           </p>
         </div>
 
         {/* Card */}
-        <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-xl">
-          <h2 className="mb-6 text-center text-xl font-bold text-gray-800">
+        <div className="rounded-3xl border border-neutral-200/60 bg-white p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <h2 className="mb-6 text-center text-base font-semibold tracking-tight text-[#1D1D1F]">
             Create your free account
           </h2>
 
           {/* Google Sign Up */}
           <button
             onClick={handleGoogleSignIn}
-            className="mb-4 flex w-full items-center justify-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 active:scale-95"
+            className="mb-4 flex w-full items-center justify-center gap-3 rounded-2xl border border-neutral-200/60 bg-white px-4 py-3 text-sm font-medium text-[#1D1D1F] shadow-[0_2px_8px_rgb(0,0,0,0.04)] transition-transform duration-300 hover:scale-[1.01] hover:shadow-[0_4px_14px_rgb(0,0,0,0.07)] active:scale-95"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24">
               <path
@@ -107,10 +109,10 @@ export default function SignUpPage() {
           {/* Divider */}
           <div className="relative my-5">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
+              <div className="w-full border-t border-neutral-100" />
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-3 text-gray-400">or</span>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-white px-3 text-neutral-400">or</span>
             </div>
           </div>
 
@@ -119,7 +121,7 @@ export default function SignUpPage() {
             <div>
               <label
                 htmlFor="name"
-                className="mb-1.5 block text-sm font-semibold text-gray-700"
+                className="mb-1.5 block text-xs font-medium text-neutral-500"
               >
                 Full Name
               </label>
@@ -130,14 +132,14 @@ export default function SignUpPage() {
                 onChange={(e) => setName(e.target.value)}
                 required
                 placeholder="Your name"
-                className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                className="w-full rounded-xl border border-neutral-200/60 bg-neutral-50 px-4 py-3 text-sm text-[#1D1D1F] outline-none transition focus:border-neutral-400 focus:bg-white focus:ring-2 focus:ring-neutral-100"
               />
             </div>
 
             <div>
               <label
                 htmlFor="email"
-                className="mb-1.5 block text-sm font-semibold text-gray-700"
+                className="mb-1.5 block text-xs font-medium text-neutral-500"
               >
                 Email
               </label>
@@ -148,14 +150,14 @@ export default function SignUpPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="you@example.com"
-                className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                className="w-full rounded-xl border border-neutral-200/60 bg-neutral-50 px-4 py-3 text-sm text-[#1D1D1F] outline-none transition focus:border-neutral-400 focus:bg-white focus:ring-2 focus:ring-neutral-100"
               />
             </div>
 
             <div>
               <label
                 htmlFor="password"
-                className="mb-1.5 block text-sm font-semibold text-gray-700"
+                className="mb-1.5 block text-xs font-medium text-neutral-500"
               >
                 Password
               </label>
@@ -167,12 +169,12 @@ export default function SignUpPage() {
                 required
                 minLength={6}
                 placeholder="Min. 6 characters"
-                className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-green-400 focus:ring-2 focus:ring-green-100"
+                className="w-full rounded-xl border border-neutral-200/60 bg-neutral-50 px-4 py-3 text-sm text-[#1D1D1F] outline-none transition focus:border-neutral-400 focus:bg-white focus:ring-2 focus:ring-neutral-100"
               />
             </div>
 
             {error && (
-              <div className="rounded-xl bg-red-50 p-3 text-sm text-red-600">
+              <div className="rounded-xl border border-red-100 bg-red-50 p-3 text-xs text-red-600">
                 {error}
               </div>
             )}
@@ -180,17 +182,17 @@ export default function SignUpPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-green-500 px-4 py-3 text-sm font-bold text-white shadow transition hover:bg-green-600 active:scale-95 disabled:opacity-70"
+              className="w-full rounded-2xl bg-[#1D1D1F] px-4 py-3 text-sm font-medium text-white shadow-[0_4px_14px_rgb(0,0,0,0.12)] transition-transform duration-300 hover:scale-[1.01] hover:opacity-90 active:scale-95 disabled:opacity-60"
             >
-              {loading ? "Creating account..." : "Create Account"}
+              {loading ? "Creating account…" : "Create Account"}
             </button>
           </form>
 
-          <p className="mt-5 text-center text-sm text-gray-500">
+          <p className="mt-5 text-center text-xs text-neutral-400">
             Already have an account?{" "}
             <Link
               href="/auth/signin"
-              className="font-semibold text-green-600 hover:underline"
+              className="font-medium text-[#1D1D1F] hover:underline"
             >
               Sign in
             </Link>

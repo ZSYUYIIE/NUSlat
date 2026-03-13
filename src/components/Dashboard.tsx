@@ -25,6 +25,7 @@ export default function Dashboard({
   ).reduce((sum, m) => sum + m.xp, 0);
 
   const completedCount = completedMilestones.length;
+  const progressPct = Math.round((completedCount / MODULES.length) * 100);
 
   const handleComplete = async (moduleId: string) => {
     setError(null);
@@ -58,22 +59,22 @@ export default function Dashboard({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 via-white to-gray-50">
-      {/* Header */}
-      <div className="sticky top-0 z-20 border-b border-green-100 bg-white/90 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3 sm:px-6">
+    <div className="min-h-screen bg-[#F5F5F7]">
+      {/* Glassmorphism header */}
+      <div className="sticky top-0 z-20 border-b border-white/20 bg-white/70 backdrop-blur-md">
+        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3.5 sm:px-6">
           <div className="flex items-center gap-2">
             <span className="text-2xl">🦜</span>
-            <span className="text-xl font-extrabold text-green-600">
+            <span className="text-lg font-semibold tracking-tight text-[#1D1D1F]">
               NUSlat
             </span>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 rounded-full bg-green-50 px-3 py-1.5 text-sm font-bold text-green-700">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-1.5 rounded-full bg-neutral-100 px-3 py-1.5 text-xs font-medium text-neutral-600">
               <span>🎯</span>
               <span>{completedCount}/{MODULES.length} modules</span>
             </div>
-            <div className="flex items-center gap-1 rounded-full bg-yellow-50 px-3 py-1.5 text-sm font-bold text-yellow-600">
+            <div className="flex items-center gap-1.5 rounded-full bg-neutral-100 px-3 py-1.5 text-xs font-medium text-neutral-600">
               <span>⚡</span>
               <span>{totalXP} XP</span>
             </div>
@@ -81,36 +82,34 @@ export default function Dashboard({
         </div>
       </div>
 
-      <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
-        {/* Welcome section */}
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-extrabold text-gray-800 sm:text-4xl">
-            Welcome back, {userName.split(" ")[0]}! 👋
+      <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
+        {/* Welcome */}
+        <div className="mb-10 text-center">
+          <h1 className="text-3xl font-semibold tracking-tight text-[#1D1D1F] sm:text-4xl">
+            Welcome back, {userName.split(" ")[0]}
           </h1>
-          <p className="mt-2 text-gray-500">
+          <p className="mt-2 text-neutral-500">
             Continue your vocabulary journey
           </p>
         </div>
 
-        {/* Progress overview */}
-        <div className="mb-8 rounded-2xl bg-gradient-to-r from-green-500 to-emerald-600 p-5 text-white shadow-lg">
-          <div className="mb-3 flex items-center justify-between">
-            <span className="text-sm font-semibold opacity-90">
+        {/* Progress card */}
+        <div className="mb-8 rounded-3xl border border-neutral-200/60 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <div className="mb-4 flex items-center justify-between">
+            <span className="text-sm font-medium tracking-tight text-[#1D1D1F]">
               Overall Progress
             </span>
-            <span className="text-sm font-bold">
-              {completedMilestones.length}/{MODULES.length} modules
+            <span className="text-sm font-semibold text-[#1D1D1F]">
+              {progressPct}%
             </span>
           </div>
-          <div className="h-3 overflow-hidden rounded-full bg-white/30">
+          <div className="h-2 overflow-hidden rounded-full bg-neutral-100">
             <div
-              className="h-full rounded-full bg-white transition-all duration-700"
-              style={{
-                width: `${(completedMilestones.length / MODULES.length) * 100}%`,
-              }}
+              className="h-full rounded-full bg-[#1D1D1F] transition-all duration-700"
+              style={{ width: `${progressPct}%` }}
             />
           </div>
-          <div className="mt-3 flex justify-between text-xs opacity-75">
+          <div className="mt-3 flex justify-between text-xs text-neutral-400">
             <span>Beginner</span>
             <span>Advanced</span>
           </div>
@@ -118,12 +117,8 @@ export default function Dashboard({
 
         {/* Error message */}
         {error && (
-          <div className="mb-6 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            <svg
-              className="h-5 w-5 shrink-0"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
+          <div className="mb-6 flex items-center gap-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-600">
+            <svg className="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor">
               <path
                 fillRule="evenodd"
                 d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
@@ -134,19 +129,20 @@ export default function Dashboard({
           </div>
         )}
 
-        {/* Module path */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-bold text-gray-700">Learning Path</h2>
+        {/* Learning path */}
+        <div className="space-y-3">
+          <h2 className="text-xs font-medium uppercase tracking-widest text-neutral-400">
+            Learning Path
+          </h2>
 
-          {/* Connector dots between cards */}
-          <div className="relative">
+          <div>
             {MODULES.map((module, index) => {
               const { isCompleted, isLocked, isActive } = getModuleStatus(
                 module.id,
                 index
               );
               return (
-                <div key={module.id} className="relative">
+                <div key={module.id}>
                   <ModuleCard
                     module={module}
                     isCompleted={isCompleted}
@@ -154,12 +150,11 @@ export default function Dashboard({
                     isActive={isActive}
                     onComplete={handleComplete}
                   />
-                  {/* Connector between cards */}
                   {index < MODULES.length - 1 && (
-                    <div className="flex justify-center py-1">
+                    <div className="flex justify-center py-2">
                       <div
-                        className={`h-8 w-0.5 ${
-                          isCompleted ? "bg-green-400" : "bg-gray-200"
+                        className={`h-6 w-px ${
+                          isCompleted ? "bg-neutral-300" : "bg-neutral-200"
                         }`}
                       />
                     </div>
@@ -170,12 +165,14 @@ export default function Dashboard({
           </div>
         </div>
 
-        {/* Completion celebration */}
+        {/* Completion */}
         {completedMilestones.length === MODULES.length && (
-          <div className="mt-8 rounded-2xl bg-gradient-to-r from-yellow-400 to-orange-500 p-6 text-center text-white shadow-xl">
-            <div className="mb-2 text-4xl">🏆</div>
-            <h3 className="text-2xl font-extrabold">Course Complete!</h3>
-            <p className="mt-1 text-sm opacity-90">
+          <div className="mt-8 rounded-3xl border border-neutral-200/60 bg-white p-8 text-center shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+            <div className="mb-3 text-4xl">🏆</div>
+            <h3 className="text-xl font-semibold tracking-tight text-[#1D1D1F]">
+              Course Complete
+            </h3>
+            <p className="mt-2 text-sm text-neutral-500">
               You&apos;ve mastered all 3,000 words. Amazing work!
             </p>
           </div>
