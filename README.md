@@ -21,9 +21,11 @@ A gamified, Duolingo-style vocabulary learning app built with Next.js, React, Ta
 
 ## Getting Started
 
-### 1. Clone and install dependencies
+### 1. Clone the repository and install dependencies
 
 ```bash
+git clone https://github.com/ZSYUYIIE/NUSlat.git
+cd NUSlat
 npm install
 ```
 
@@ -37,8 +39,8 @@ cp .env.example .env.local
 
 Required variables:
 - `MONGODB_URI` – Your MongoDB connection string
-- `NEXTAUTH_SECRET` – A random secret string (generate with `openssl rand -base64 32`)
-- `NEXTAUTH_URL` – Your app URL (e.g., `http://localhost:3000`)
+- `AUTH_SECRET` – A random secret string (generate with `openssl rand -base64 32`)
+- `AUTH_URL` – Your app URL (e.g., `http://localhost:3000`)
 - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` – From [Google Cloud Console](https://console.cloud.google.com/)
 
 ### 3. Run the development server
