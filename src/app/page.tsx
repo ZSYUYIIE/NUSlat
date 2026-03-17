@@ -50,7 +50,7 @@ export default async function Home() {
           Unlock modules as you progress and build real fluency.
         </p>
 
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+        <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
           <Link
             href="/auth/signup"
             className="rounded-full bg-[#1D1D1F] px-8 py-3.5 text-sm font-medium text-white shadow-[0_4px_14px_rgb(0,0,0,0.12)] transition-transform duration-300 hover:scale-[1.02] hover:opacity-90"
@@ -64,6 +64,12 @@ export default async function Home() {
             Sign In
           </Link>
         </div>
+        <Link
+          href="/dashboard"
+          className="mt-3 text-xs text-neutral-600 transition-colors hover:text-neutral-900"
+        >
+          Continue as Guest →
+        </Link>
 
         {/* Feature cards */}
         <div className="mt-20 grid w-full max-w-3xl grid-cols-1 gap-4 sm:grid-cols-3">
