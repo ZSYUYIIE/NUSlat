@@ -2,7 +2,12 @@
 
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { MODULES } from "@/lib/modules";
+import {
+  MODULES,
+  getChapterSequence,
+  getCompletedChapterCountByModule,
+  getNextIncompleteChapterInModule,
+} from "@/lib/modules";
 import ModuleCard from "@/components/ModuleCard";
 import { useMilestones } from "@/hooks/useMilestones";
 
@@ -13,20 +18,52 @@ export default function Dashboard() {
 
   const isGuest = !session?.user;
   const userName = session?.user?.name?.split(" ")[0] ?? "Guest";
+  const allChapterIds = getChapterSequence();
 
-  const totalXP = MODULES.filter((m) =>
-    completedMilestones.includes(m.id)
-  ).reduce((sum, m) => sum + m.xp, 0);
+  const totalXP = MODULES.reduce((sum, module) => {
+    const completedInModule = getCompletedChapterCountByModule(
+      module.id,
+      completedMilestones
+    );
+    const chapterXP = Math.floor(module.xp / module.chapters.length);
+    return sum + completedInModule * chapterXP;
+  }, 0);
 
   const completedCount = completedMilestones.length;
-  const progressPct = Math.round((completedCount / MODULES.length) * 100);
+  const progressPct = Math.round((completedCount / allChapterIds.length) * 100);
 
   const getModuleStatus = (moduleId: string, index: number) => {
-    const isCompleted = completedMilestones.includes(moduleId);
-    const isLocked =
-      index > 0 && !completedMilestones.includes(MODULES[index - 1].id);
-    const isActive = !isCompleted && !isLocked;
-    return { isCompleted, isLocked, isActive };
+    const moduleData = MODULES.find((item) => item.id === moduleId);
+    if (!moduleData) {
+      return {
+        isCompleted: false,
+        isLocked: true,
+        isActive: false,
+        completedChapters: 0,
+        nextChapterId: null,
+      };
+    }
+
+    const completedChapters = moduleData.chapters.filter((chapter) =>
+      completedMilestones.includes(chapter.id)
+    ).length;
+    const isCompleted = completedChapters === moduleData.chapters.length;
+
+    const previousModule = index > 0 ? MODULES[index - 1] : null;
+    const previousModuleComplete =
+      !previousModule ||
+      previousModule.chapters.every((chapter) =>
+        completedMilestones.includes(chapter.id)
+      );
+
+    const isLocked = !previousModuleComplete;
+    const isActive = !isLocked;
+    const nextChapterId = getNextIncompleteChapterInModule(
+      moduleData.id,
+      completedMilestones
+    );
+
+    return { isCompleted, isLocked, isActive, completedChapters, nextChapterId };
   };
 
   return (
@@ -43,7 +80,7 @@ export default function Dashboard() {
             <div className="duo-chip flex flex-1 items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-[#3f6f25] sm:flex-initial">
               <span>🎯</span>
               <span>
-                {completedCount}/{MODULES.length} modules
+                {completedCount}/{allChapterIds.length} chapters
               </span>
             </div>
             <div className="duo-chip flex flex-1 items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-[#3f6f25] sm:flex-initial">
@@ -145,10 +182,13 @@ export default function Dashboard() {
 
           <div>
             {MODULES.map((module, index) => {
-              const { isCompleted, isLocked, isActive } = getModuleStatus(
-                module.id,
-                index
-              );
+              const {
+                isCompleted,
+                isLocked,
+                isActive,
+                completedChapters,
+                nextChapterId,
+              } = getModuleStatus(module.id, index);
               return (
                 <div key={module.id}>
                   <ModuleCard
@@ -156,6 +196,8 @@ export default function Dashboard() {
                     isCompleted={isCompleted}
                     isLocked={isLocked}
                     isActive={isActive}
+                    completedChapters={completedChapters}
+                    nextChapterId={nextChapterId}
                   />
                   {index < MODULES.length - 1 && (
                     <div className="flex justify-center py-2">
@@ -173,14 +215,14 @@ export default function Dashboard() {
         </div>
 
         {/* Completion */}
-        {completedMilestones.length === MODULES.length && (
+        {completedMilestones.length === allChapterIds.length && (
           <div className="duo-card mt-8 p-8 text-center">
             <div className="mb-3 text-4xl">🏆</div>
             <h3 className="text-xl font-extrabold tracking-tight text-[#2c5015]">
               Course Complete
             </h3>
             <p className="mt-2 text-sm text-[#4d6b3a]">
-              You&apos;ve mastered all 3,000 words. Amazing work!
+              You&apos;ve mastered every chapter. Amazing work!
             </p>
             {isGuest && (
               <Link

@@ -6,6 +6,7 @@ import {
   isEmailVerificationConfigured,
   sendVerificationEmail,
 } from "@/lib/email-verification";
+import { normalizeProgressIds } from "@/lib/modules";
 import User from "@/models/User";
 
 export async function POST(request: NextRequest) {
@@ -40,10 +41,13 @@ export async function POST(request: NextRequest) {
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Initialize completedMilestones with guestMilestones if provided, removing duplicates
+    // Accept guest progress from either module-era or chapter-era IDs.
     let completedMilestones: string[] = [];
     if (guestMilestones && Array.isArray(guestMilestones)) {
-      completedMilestones = [...new Set(guestMilestones)];
+      const asStrings = guestMilestones.filter(
+        (value: unknown): value is string => typeof value === "string"
+      );
+      completedMilestones = normalizeProgressIds(asStrings);
     }
 
     const verificationRequired = isEmailVerificationConfigured();
@@ -64,6 +68,7 @@ export async function POST(request: NextRequest) {
       email: normalizedEmail,
       password: hashedPassword,
       completedMilestones,
+      completedChapters: completedMilestones,
       isEmailVerified: !verificationRequired,
       emailVerifiedAt: verificationRequired ? undefined : new Date(),
       emailVerificationToken: tokenHash,

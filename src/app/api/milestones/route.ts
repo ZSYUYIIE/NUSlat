@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { connectDB } from "@/lib/db";
+import { getChapterSequence, normalizeProgressIds } from "@/lib/modules";
 import User from "@/models/User";
 
-const VALID_MILESTONES = ["1k", "2k", "3k"];
+const VALID_MILESTONES = getChapterSequence();
 
 export async function GET() {
   try {
@@ -20,8 +21,13 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    const completedChapters = normalizeProgressIds(
+      user.completedChapters ?? user.completedMilestones ?? []
+    );
+
     return NextResponse.json({
-      completedMilestones: user.completedMilestones,
+      completedChapters,
+      completedMilestones: completedChapters,
     });
   } catch (error) {
     console.error("Get milestones error:", error);
@@ -40,11 +46,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { milestone } = await request.json();
+    const { milestone, chapter } = await request.json();
+    const progressId = chapter ?? milestone;
 
-    if (!milestone || !VALID_MILESTONES.includes(milestone)) {
+    if (!progressId || !VALID_MILESTONES.includes(progressId)) {
       return NextResponse.json(
-        { error: "Invalid milestone. Must be one of: 1k, 2k, 3k" },
+        { error: "Invalid chapter ID." },
         { status: 400 }
       );
     }
@@ -57,28 +64,36 @@ export async function POST(request: NextRequest) {
     }
 
     // Check prerequisite milestone is already completed
-    const milestoneIndex = VALID_MILESTONES.indexOf(milestone);
+    const existing = normalizeProgressIds(
+      user.completedChapters ?? user.completedMilestones ?? []
+    );
+
+    const milestoneIndex = VALID_MILESTONES.indexOf(progressId);
     if (milestoneIndex > 0) {
       const prerequisite = VALID_MILESTONES[milestoneIndex - 1];
-      if (!user.completedMilestones.includes(prerequisite)) {
+      if (!existing.includes(prerequisite)) {
         return NextResponse.json(
           {
-            error: `You must complete the ${prerequisite} milestone first`,
+            error: `You must complete the previous chapter first`,
           },
           { status: 403 }
         );
       }
     }
 
-    // Add milestone if not already completed
-    if (!user.completedMilestones.includes(milestone)) {
-      user.completedMilestones.push(milestone);
-      await user.save();
+    if (!existing.includes(progressId)) {
+      existing.push(progressId);
     }
 
+    const normalized = normalizeProgressIds(existing);
+    user.completedChapters = normalized;
+    user.completedMilestones = normalized;
+    await user.save();
+
     return NextResponse.json({
-      message: "Milestone completed!",
-      completedMilestones: user.completedMilestones,
+      message: "Chapter completed!",
+      completedChapters: normalized,
+      completedMilestones: normalized,
     });
   } catch (error) {
     console.error("Update milestone error:", error);

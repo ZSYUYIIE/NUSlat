@@ -10,6 +10,7 @@ export interface IUser extends Document {
   emailVerificationToken?: string;
   emailVerificationExpires?: Date;
   completedMilestones: string[];
+  completedChapters: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -51,6 +52,10 @@ const UserSchema: Schema<IUser> = new Schema(
       select: false,
     },
     completedMilestones: {
+      type: [String],
+      default: [],
+    },
+    completedChapters: {
       type: [String],
       default: [],
     },

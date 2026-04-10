@@ -9,6 +9,8 @@ interface ModuleCardProps {
   isCompleted: boolean;
   isLocked: boolean;
   isActive: boolean;
+  completedChapters: number;
+  nextChapterId: string | null;
 }
 
 export default function ModuleCard({
@@ -16,15 +18,19 @@ export default function ModuleCard({
   isCompleted,
   isLocked,
   isActive,
+  completedChapters,
+  nextChapterId,
 }: ModuleCardProps) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleStart = async () => {
-    if (isLocked || isCompleted || loading) return;
+    if (isLocked || loading) return;
     setLoading(true);
     try {
-      router.push(`/learn/${module.id}`);
+      const chapterId = nextChapterId ?? module.chapters[0]?.id;
+      if (!chapterId) return;
+      router.push(`/learn/${module.id}?chapter=${chapterId}`);
     } finally {
       setLoading(false);
     }
@@ -94,7 +100,9 @@ export default function ModuleCard({
           <h3 className="text-base font-extrabold tracking-tight text-[#2c5015] sm:text-lg">
             {module.title}
           </h3>
-          <p className="text-sm text-[#5b7a46]">{module.lessons} lessons</p>
+          <p className="text-sm text-[#5b7a46]">
+            {completedChapters}/{module.chapters.length} chapters complete
+          </p>
         </div>
       </div>
 
@@ -110,11 +118,7 @@ export default function ModuleCard({
           <span>{module.xp} XP</span>
         </div>
 
-        {isCompleted ? (
-          <span className="rounded-full bg-neutral-100 px-4 py-1.5 text-xs font-medium text-neutral-600">
-            Completed
-          </span>
-        ) : isActive ? (
+        {isActive ? (
           <button
             onClick={handleStart}
             disabled={loading}
@@ -144,7 +148,7 @@ export default function ModuleCard({
                 Loading…
               </span>
             ) : (
-              "Start →"
+              isCompleted ? "Review ↺" : completedChapters > 0 ? "Continue →" : "Start →"
             )}
           </button>
         ) : null}

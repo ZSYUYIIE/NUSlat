@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useCallback, useSyncExternalStore } from "react";
 import { useSession } from "next-auth/react";
-import { MODULES } from "@/lib/modules";
+import { getChapterSequence, normalizeProgressIds } from "@/lib/modules";
 
 const GUEST_STORAGE_KEY = "nuslat_guest_progress";
-const VALID_MILESTONES = MODULES.map((m) => m.id);
+const VALID_MILESTONES = getChapterSequence();
 
 export interface UseMilestonesReturn {
   completedMilestones: string[];
@@ -38,7 +38,7 @@ function readGuestProgress(): Promise<string[]> {
           Array.isArray(parsed) &&
           parsed.every((v) => typeof v === "string")
         ) {
-          return parsed as string[];
+          return normalizeProgressIds(parsed as string[]);
         }
       }
     } catch {
@@ -76,8 +76,11 @@ export function useMilestones(): UseMilestonesReturn {
       fetch("/api/milestones")
         .then((res) => res.json())
         .then((data) => {
-          if (Array.isArray(data.completedMilestones)) {
-            setCompletedMilestones(data.completedMilestones);
+          const progress = Array.isArray(data.completedChapters)
+            ? data.completedChapters
+            : data.completedMilestones;
+          if (Array.isArray(progress)) {
+            setCompletedMilestones(normalizeProgressIds(progress));
           }
         })
         .catch(() =>
@@ -102,14 +105,19 @@ export function useMilestones(): UseMilestonesReturn {
           const res = await fetch("/api/milestones", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ milestone: moduleId }),
+            body: JSON.stringify({ chapter: moduleId }),
           });
           const data = await res.json();
           if (!res.ok) {
             setError(data.error ?? "Failed to complete milestone.");
             return;
           }
-          setCompletedMilestones(data.completedMilestones);
+          const progress = Array.isArray(data.completedChapters)
+            ? data.completedChapters
+            : data.completedMilestones;
+          if (Array.isArray(progress)) {
+            setCompletedMilestones(normalizeProgressIds(progress));
+          }
         } catch {
           setError("Network error. Please try again.");
         }
@@ -120,7 +128,7 @@ export function useMilestones(): UseMilestonesReturn {
 
           const idx = VALID_MILESTONES.indexOf(moduleId);
           if (idx > 0 && !prev.includes(VALID_MILESTONES[idx - 1])) {
-            setError(`Complete "${MODULES[idx - 1].title}" first.`);
+            setError("Complete the previous chapter first.");
             return prev;
           }
 
