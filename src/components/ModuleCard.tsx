@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Module } from "@/lib/modules";
 
 interface ModuleCardProps {
@@ -8,7 +9,6 @@ interface ModuleCardProps {
   isCompleted: boolean;
   isLocked: boolean;
   isActive: boolean;
-  onComplete: (moduleId: string) => Promise<void>;
 }
 
 export default function ModuleCard({
@@ -16,15 +16,15 @@ export default function ModuleCard({
   isCompleted,
   isLocked,
   isActive,
-  onComplete,
 }: ModuleCardProps) {
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-  const handleComplete = async () => {
+  const handleStart = async () => {
     if (isLocked || isCompleted || loading) return;
     setLoading(true);
     try {
-      await onComplete(module.id);
+      router.push(`/learn/${module.id}`);
     } finally {
       setLoading(false);
     }
@@ -32,17 +32,17 @@ export default function ModuleCard({
 
   return (
     <div
-      className={`relative rounded-3xl border border-neutral-200/60 bg-white p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 ${
+      className={`duo-card relative p-5 transition-all duration-300 sm:p-8 ${
         isLocked
           ? "cursor-not-allowed opacity-50"
           : isCompleted
           ? ""
-          : "cursor-pointer hover:scale-[1.02] hover:shadow-[0_12px_40px_rgb(0,0,0,0.07)]"
+          : "cursor-pointer hover:-translate-y-0.5"
       }`}
     >
       {/* Completed badge */}
       {isCompleted && (
-        <div className="absolute -right-2 -top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-[#1D1D1F] shadow-[0_4px_12px_rgb(0,0,0,0.15)]">
+        <div className="absolute -right-2 -top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-[#58cc02] shadow-[0_4px_10px_rgba(88,204,2,0.35)]">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-3.5 w-3.5 text-white"
@@ -84,28 +84,28 @@ export default function ModuleCard({
       )}
 
       {/* Header */}
-      <div className="mb-5 flex items-center gap-4">
+      <div className="mb-5 flex items-center gap-3 sm:gap-4">
         <div
-          className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-3xl ${module.iconBg}`}
+          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-2xl ring-2 ring-[#d7f4c9] sm:h-14 sm:w-14 sm:text-3xl ${module.iconBg}`}
         >
           {module.icon}
         </div>
         <div>
-          <h3 className="text-lg font-semibold tracking-tight text-[#1D1D1F]">
+          <h3 className="text-base font-extrabold tracking-tight text-[#2c5015] sm:text-lg">
             {module.title}
           </h3>
-          <p className="text-sm text-neutral-500">{module.lessons} lessons</p>
+          <p className="text-sm text-[#5b7a46]">{module.lessons} lessons</p>
         </div>
       </div>
 
       {/* Description */}
-      <p className="mb-6 text-sm leading-relaxed text-neutral-500">
+      <p className="mb-6 text-sm leading-relaxed text-[#4d6b3a]">
         {module.description}
       </p>
 
       {/* Footer: XP + action */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5 rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-600">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="duo-chip flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-[#3f6f25]">
           <span>⚡</span>
           <span>{module.xp} XP</span>
         </div>
@@ -116,9 +116,9 @@ export default function ModuleCard({
           </span>
         ) : isActive ? (
           <button
-            onClick={handleComplete}
+            onClick={handleStart}
             disabled={loading}
-            className={`rounded-full bg-gradient-to-r ${module.gradient} px-5 py-2 text-sm font-medium text-white shadow-[0_4px_14px_rgb(0,0,0,0.15)] transition-all duration-200 hover:opacity-90 active:scale-95 disabled:opacity-60`}
+            className="duo-btn-primary w-full px-5 py-2.5 text-sm sm:w-auto sm:py-2"
           >
             {loading ? (
               <span className="flex items-center gap-2">
@@ -141,7 +141,7 @@ export default function ModuleCard({
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                   />
                 </svg>
-                Saving…
+                Loading…
               </span>
             ) : (
               "Start →"
@@ -153,8 +153,8 @@ export default function ModuleCard({
       {/* Active pulse indicator */}
       {isActive && !isCompleted && (
         <div className="mt-5 flex items-center gap-2 text-xs text-neutral-400">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-          <span>Ready to start</span>
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[#58cc02]" />
+          <span className="font-bold text-[#6f8f58]">Ready to start</span>
         </div>
       )}
     </div>

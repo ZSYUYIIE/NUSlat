@@ -7,6 +7,7 @@ A gamified, Duolingo-style vocabulary learning app built with Next.js, React, Ta
 - 🦜 **Gamified Learning Path** – Three sequential vocabulary modules (1k, 2k, 3k words)
 - 🔒 **Progressive Unlocking** – Module 2k unlocks only after completing 1k; 3k unlocks after 2k
 - 🔐 **Authentication** – Sign in with Google OAuth or Email/Password via NextAuth.js v5
+- ✉️ **Email Verification** – Credentials users must verify email before first sign-in
 - 🏆 **XP System** – Earn XP points as you complete modules
 - 📱 **Fully Responsive** – Works on mobile, tablet, and desktop
 
@@ -42,6 +43,7 @@ Required variables:
 - `AUTH_SECRET` – A random secret string (generate with `openssl rand -base64 32`)
 - `AUTH_URL` – Your app URL (e.g., `http://localhost:3000`)
 - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` – From [Google Cloud Console](https://console.cloud.google.com/)
+- `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` – For email verification delivery
 
 ### 3. Run the development server
 
@@ -85,6 +87,8 @@ src/
 |--------|-------|-------------|
 | `POST` | `/api/auth/register` | Register a new user |
 | `GET/POST` | `/api/auth/[...nextauth]` | NextAuth.js handlers |
+| `GET` | `/api/auth/verify-email` | Verify email token |
+| `POST` | `/api/auth/resend-verification` | Resend verification link |
 | `GET` | `/api/milestones` | Get current user's completed milestones |
 | `POST` | `/api/milestones` | Mark a milestone as completed |
 

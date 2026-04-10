@@ -8,7 +8,7 @@ import { useMilestones } from "@/hooks/useMilestones";
 
 export default function Dashboard() {
   const { data: session } = useSession();
-  const { completedMilestones, completeModule, error, clearError, loading } =
+  const { completedMilestones, error, clearError, loading } =
     useMilestones();
 
   const isGuest = !session?.user;
@@ -30,24 +30,23 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7]">
-      {/* Glassmorphism header */}
-      <div className="sticky top-0 z-20 border-b border-white/20 bg-white/70 backdrop-blur-md">
-        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3.5 sm:px-6">
+    <div className="duo-shell min-h-screen">
+      <div className="sticky top-0 z-20 border-b-2 border-[#d7f4c9] bg-[#f6ffef]/95 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-2 px-4 py-3.5 sm:px-6">
           <div className="flex items-center gap-2">
             <span className="text-2xl">🦜</span>
-            <span className="text-lg font-semibold tracking-tight text-[#1D1D1F]">
+            <span className="text-lg font-extrabold tracking-tight text-[#2c5015]">
               NUSlat
             </span>
           </div>
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-1.5 rounded-full bg-neutral-100 px-3 py-1.5 text-xs font-medium text-neutral-600">
+          <div className="flex w-full items-center gap-2.5 sm:w-auto">
+            <div className="duo-chip flex flex-1 items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-[#3f6f25] sm:flex-initial">
               <span>🎯</span>
               <span>
                 {completedCount}/{MODULES.length} modules
               </span>
             </div>
-            <div className="flex items-center gap-1.5 rounded-full bg-neutral-100 px-3 py-1.5 text-xs font-medium text-neutral-600">
+            <div className="duo-chip flex flex-1 items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-[#3f6f25] sm:flex-initial">
               <span>⚡</span>
               <span>{totalXP} XP</span>
             </div>
@@ -68,20 +67,20 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
         {/* Welcome */}
-        <div className="mb-10 text-center">
-          <h1 className="text-3xl font-semibold tracking-tight text-[#1D1D1F] sm:text-4xl">
+        <div className="mb-8 text-center sm:mb-10">
+          <h1 className="text-2xl font-extrabold tracking-tight text-[#2c5015] sm:text-4xl">
             {isGuest ? "Welcome, Guest" : `Welcome back, ${userName}`}
           </h1>
-          <p className="mt-2 text-neutral-500">
+          <p className="mt-2 text-sm text-[#4d6b3a] sm:text-base">
             Continue your vocabulary journey
           </p>
         </div>
 
         {/* Loading skeleton */}
         {loading && (
-          <div className="mb-8 animate-pulse rounded-3xl border border-neutral-200/60 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <div className="duo-card mb-8 animate-pulse p-6">
             <div className="mb-4 h-3 w-32 rounded-full bg-neutral-100" />
             <div className="h-2 rounded-full bg-neutral-100" />
           </div>
@@ -89,22 +88,22 @@ export default function Dashboard() {
 
         {/* Progress card */}
         {!loading && (
-          <div className="mb-8 rounded-3xl border border-neutral-200/60 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <div className="duo-card mb-8 p-6">
             <div className="mb-4 flex items-center justify-between">
-              <span className="text-sm font-medium tracking-tight text-[#1D1D1F]">
+              <span className="text-sm font-bold tracking-tight text-[#2c5015]">
                 Overall Progress
               </span>
-              <span className="text-sm font-semibold text-[#1D1D1F]">
+              <span className="text-sm font-extrabold text-[#2c5015]">
                 {progressPct}%
               </span>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-neutral-100">
+            <div className="h-3 overflow-hidden rounded-full bg-[#e8f9db]">
               <div
-                className="h-full rounded-full bg-[#1D1D1F] transition-all duration-700"
+                className="h-full rounded-full bg-[#58cc02] transition-all duration-700"
                 style={{ width: `${progressPct}%` }}
               />
             </div>
-            <div className="mt-3 flex justify-between text-xs text-neutral-400">
+            <div className="mt-3 flex justify-between text-xs font-bold text-[#87a66f]">
               <span>Beginner</span>
               <span>Advanced</span>
             </div>
@@ -140,7 +139,7 @@ export default function Dashboard() {
 
         {/* Learning path */}
         <div className="space-y-3">
-          <h2 className="text-xs font-medium uppercase tracking-widest text-neutral-400">
+          <h2 className="text-xs font-extrabold uppercase tracking-widest text-[#87a66f]">
             Learning Path
           </h2>
 
@@ -157,7 +156,6 @@ export default function Dashboard() {
                     isCompleted={isCompleted}
                     isLocked={isLocked}
                     isActive={isActive}
-                    onComplete={completeModule}
                   />
                   {index < MODULES.length - 1 && (
                     <div className="flex justify-center py-2">
@@ -176,18 +174,18 @@ export default function Dashboard() {
 
         {/* Completion */}
         {completedMilestones.length === MODULES.length && (
-          <div className="mt-8 rounded-3xl border border-neutral-200/60 bg-white p-8 text-center shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <div className="duo-card mt-8 p-8 text-center">
             <div className="mb-3 text-4xl">🏆</div>
-            <h3 className="text-xl font-semibold tracking-tight text-[#1D1D1F]">
+            <h3 className="text-xl font-extrabold tracking-tight text-[#2c5015]">
               Course Complete
             </h3>
-            <p className="mt-2 text-sm text-neutral-500">
+            <p className="mt-2 text-sm text-[#4d6b3a]">
               You&apos;ve mastered all 3,000 words. Amazing work!
             </p>
             {isGuest && (
               <Link
                 href="/auth/signup"
-                className="mt-5 inline-block rounded-full bg-[#1D1D1F] px-6 py-2.5 text-sm font-medium text-white shadow-[0_4px_14px_rgb(0,0,0,0.12)] transition-transform duration-300 hover:scale-[1.02] hover:opacity-90"
+                className="duo-btn-primary mt-5 inline-block px-6 py-2.5 text-sm"
               >
                 Create an account to keep your progress
               </Link>

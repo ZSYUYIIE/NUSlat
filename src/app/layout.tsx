@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
+import { Nunito } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
+
+const nunito = Nunito({
+  subsets: ["latin"],
+  weight: ["400", "600", "700", "800", "900"],
+});
 
 export const metadata: Metadata = {
   title: "NUSlat – Vocabulary Learning",
@@ -14,8 +20,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="font-sans antialiased">
+    <html lang="en" suppressHydrationWarning>
+      <body
+        suppressHydrationWarning
+        className={`${nunito.className} font-sans antialiased`}
+      >
         <Providers>{children}</Providers>
       </body>
     </html>

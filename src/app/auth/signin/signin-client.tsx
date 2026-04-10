@@ -1,19 +1,41 @@
 "use client";
 
-import { useState } from "react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { getProviders, signIn } from "next-auth/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function SignUpPage() {
-  const [name, setName] = useState("");
+export default function SignInClient() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [resendingVerification, setResendingVerification] = useState(false);
   const [googleEnabled, setGoogleEnabled] = useState(true);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const authError = searchParams.get("error");
+    const authEmail = searchParams.get("email") || "";
+
+    if (authEmail) {
+      setEmail(authEmail);
+    }
+
+    if (authError === "AccessDenied") {
+      setError(
+        "Google sign-in could not be completed. Please try again or use email/password."
+      );
+      setInfo(null);
+    }
+
+    if (authError === "EmailNotVerified") {
+      setError("Please verify your email before signing in.");
+      setInfo("We can send you a new verification link below.");
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     let mounted = true;
@@ -34,97 +56,34 @@ export default function SignUpPage() {
     };
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCredentialsSignIn = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
     try {
       const normalizedEmail = email.trim().toLowerCase();
-
-      // Read guestMilestones from localStorage
-      let guestMilestones: string[] = [];
-      try {
-        const stored = localStorage.getItem("nuslat_guest_progress");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) {
-            guestMilestones = parsed;
-          }
-        }
-      } catch {
-        // If localStorage read fails, continue without guest progress
-      }
-
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: name.trim(),
-          email: normalizedEmail,
-          password,
-          guestMilestones,
-        }),
-      });
-
-      let data: {
-        error?: string;
-        emailVerificationRequired?: boolean;
-        verificationEmailSent?: boolean;
-      } = {};
-      try {
-        data = await res.json();
-      } catch {
-        data = {};
-      }
-
-      if (!res.ok) {
-        if (res.status === 503) {
-          setError(
-            data.error ||
-              "Service unavailable. Please try again in a few minutes."
-          );
-        } else {
-          setError(data.error || "Registration failed. Please try again.");
-        }
-        return;
-      }
-
-      // Clear localStorage after successful registration
-      try {
-        localStorage.removeItem("nuslat_guest_progress");
-      } catch {
-        // If localStorage clear fails, continue anyway
-      }
-
-      if (data.emailVerificationRequired) {
-        if (!data.verificationEmailSent) {
-          setError(
-            "Account created, but verification email could not be sent. Use Resend on Sign In after SMTP is configured."
-          );
-          router.push(`/auth/signin?email=${encodeURIComponent(normalizedEmail)}&error=EmailNotVerified`);
-          return;
-        }
-
-        router.push(`/auth/verify-email?email=${encodeURIComponent(normalizedEmail)}`);
-        router.refresh();
-        return;
-      }
-
-      const signInResult = await signIn("credentials", {
+      const result = await signIn("credentials", {
         email: normalizedEmail,
         password,
         redirect: false,
       });
 
-      if (signInResult?.error) {
-        router.push(`/auth/signin?email=${encodeURIComponent(normalizedEmail)}`);
+      if (result?.url?.includes("error=EmailNotVerified")) {
+        setError("Please verify your email before signing in.");
+        setInfo("We can send you a new verification link below.");
+      } else if (result?.error) {
+        if (result.error.includes("CredentialsSignin")) {
+          setError("Invalid email or password. Please try again.");
+        } else {
+          setError("Unable to sign in right now. Please try again shortly.");
+        }
       } else {
         router.push("/dashboard");
         router.refresh();
       }
-    } catch {
-      setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -132,6 +91,7 @@ export default function SignUpPage() {
 
   const handleGoogleSignIn = async () => {
     setError(null);
+    setInfo(null);
     if (!googleEnabled) {
       setError("Google sign-in is not configured in this environment yet.");
       return;
@@ -139,10 +99,41 @@ export default function SignUpPage() {
     await signIn("google", { callbackUrl: "/dashboard" });
   };
 
+  const handleResendVerification = async () => {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) {
+      setError("Enter your email first to resend a verification link.");
+      return;
+    }
+
+    setResendingVerification(true);
+    setError(null);
+    setInfo(null);
+
+    try {
+      const res = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: normalizedEmail }),
+      });
+
+      const data: { message?: string; error?: string } = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Failed to resend verification email.");
+        return;
+      }
+
+      setInfo(data.message || "Verification email sent.");
+    } catch {
+      setError("Failed to resend verification email.");
+    } finally {
+      setResendingVerification(false);
+    }
+  };
+
   return (
     <div className="duo-shell flex min-h-screen items-center justify-center px-4 py-6 sm:py-12">
       <div className="w-full max-w-md lg:max-w-lg">
-        {/* Logo */}
         <div className="mb-8 text-center">
           <div className="mb-3 flex justify-center">
             <span className="text-5xl">🦜</span>
@@ -150,20 +141,17 @@ export default function SignUpPage() {
           <h1 className="text-3xl font-extrabold tracking-tight text-[#2c5015]">
             NUSlat
           </h1>
-          <p className="mt-1 text-sm font-bold text-[#5a7c45]">
-            Start your vocabulary journey today
-          </p>
+          <p className="mt-1 text-sm font-bold text-[#5a7c45]">Welcome back</p>
         </div>
 
         <div className="duo-card p-5 sm:p-8">
           <h2 className="mb-2 text-center text-base font-extrabold tracking-tight text-[#2c5015]">
-            Create your free account
+            Sign in to your account
           </h2>
           <p className="mb-6 text-center text-xs font-bold uppercase tracking-wide text-[#8cad73]">
-            Start your first lesson today
+            Keep your streak going
           </p>
 
-          {/* Google Sign Up */}
           <button
             onClick={handleGoogleSignIn}
             disabled={!googleEnabled}
@@ -196,7 +184,6 @@ export default function SignUpPage() {
             </p>
           )}
 
-          {/* Divider */}
           <div className="relative my-5">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-neutral-100" />
@@ -206,26 +193,7 @@ export default function SignUpPage() {
             </div>
           </div>
 
-          {/* Registration Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label
-                htmlFor="name"
-                className="mb-1.5 block text-xs font-medium text-neutral-500"
-              >
-                Full Name
-              </label>
-              <input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                placeholder="Your name"
-                className="duo-input w-full px-4 py-3 text-sm text-[#2c5015]"
-              />
-            </div>
-
+          <form onSubmit={handleCredentialsSignIn} className="space-y-4">
             <div>
               <label
                 htmlFor="email"
@@ -257,8 +225,7 @@ export default function SignUpPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
-                placeholder="Min. 6 characters"
+                placeholder="••••••••"
                 className="duo-input w-full px-4 py-3 text-sm text-[#2c5015]"
               />
             </div>
@@ -269,22 +236,41 @@ export default function SignUpPage() {
               </div>
             )}
 
+            {info && (
+              <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-xs text-emerald-700">
+                {info}
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={loading}
               className="duo-btn-primary w-full px-4 py-3 text-sm disabled:opacity-60"
             >
-              {loading ? "Creating account…" : "Create Account"}
+              {loading ? "Signing in…" : "Sign In"}
             </button>
+
+            {(error?.includes("verify") || info?.includes("verification")) && (
+              <button
+                type="button"
+                onClick={handleResendVerification}
+                disabled={resendingVerification}
+                className="duo-btn-secondary w-full px-4 py-3 text-sm disabled:opacity-60"
+              >
+                {resendingVerification
+                  ? "Sending link..."
+                  : "Resend verification email"}
+              </button>
+            )}
           </form>
 
-          <p className="mt-5 text-center text-xs text-[#7d9d68]">
-            Already have an account?{" "}
+          <p className="mt-5 text-center text-xs text-neutral-400">
+            Don&apos;t have an account?{" "}
             <Link
-              href="/auth/signin"
+              href="/auth/signup"
               className="font-extrabold text-[#58cc02] hover:underline"
             >
-              Sign in
+              Sign up for free
             </Link>
           </p>
         </div>

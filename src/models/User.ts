@@ -5,6 +5,10 @@ export interface IUser extends Document {
   email: string;
   password?: string;
   image?: string;
+  isEmailVerified: boolean;
+  emailVerifiedAt?: Date;
+  emailVerificationToken?: string;
+  emailVerificationExpires?: Date;
   completedMilestones: string[];
   createdAt: Date;
   updatedAt: Date;
@@ -30,6 +34,21 @@ const UserSchema: Schema<IUser> = new Schema(
     },
     image: {
       type: String,
+    },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailVerifiedAt: {
+      type: Date,
+    },
+    emailVerificationToken: {
+      type: String,
+      select: false,
+    },
+    emailVerificationExpires: {
+      type: Date,
+      select: false,
     },
     completedMilestones: {
       type: [String],

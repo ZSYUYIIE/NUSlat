@@ -10,26 +10,25 @@ export default async function Home() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F5F5F7]">
-      {/* Glassmorphism nav */}
-      <nav className="sticky top-0 z-10 border-b border-white/20 bg-white/70 backdrop-blur-md">
+    <div className="duo-shell flex min-h-screen flex-col">
+      <nav className="sticky top-0 z-10 border-b-2 border-[#d7f4c9] bg-[#f6ffef]/90 backdrop-blur-sm">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4 sm:px-10">
           <div className="flex items-center gap-2">
             <span className="text-2xl">🦜</span>
-            <span className="text-lg font-semibold tracking-tight text-[#1D1D1F]">
+            <span className="text-lg font-extrabold tracking-tight text-[#2c5015]">
               NUSlat
             </span>
           </div>
           <div className="flex items-center gap-3">
             <Link
               href="/auth/signin"
-              className="rounded-full px-5 py-2 text-sm font-medium text-neutral-600 transition-transform duration-300 hover:scale-[1.02] hover:bg-white/80"
+              className="duo-btn-secondary px-5 py-2 text-sm"
             >
               Sign In
             </Link>
             <Link
               href="/auth/signup"
-              className="rounded-full bg-[#1D1D1F] px-5 py-2 text-sm font-medium text-white shadow-[0_4px_14px_rgb(0,0,0,0.12)] transition-transform duration-300 hover:scale-[1.02] hover:opacity-90"
+              className="duo-btn-primary px-5 py-2 text-sm"
             >
               Get Started
             </Link>
@@ -37,15 +36,17 @@ export default async function Home() {
         </div>
       </nav>
 
-      {/* Hero */}
       <main className="flex flex-1 flex-col items-center justify-center px-6 pb-24 pt-16 text-center sm:px-10">
+        <div className="mb-4 inline-flex items-center rounded-full border-2 border-[#d7f4c9] bg-white px-4 py-1 text-xs font-extrabold uppercase tracking-wider text-[#46a302]">
+          Build Thai Daily
+        </div>
         <div className="mb-6 text-7xl">🦜</div>
-        <h1 className="max-w-2xl text-4xl font-semibold leading-tight tracking-tight text-[#1D1D1F] sm:text-5xl lg:text-6xl">
+        <h1 className="max-w-2xl text-4xl font-extrabold leading-tight tracking-tight text-[#2c5015] sm:text-5xl lg:text-6xl">
           Learn vocabulary
           <br />
-          <span className="text-neutral-400">the smart way</span>
+          <span className="text-[#58cc02]">the fun way</span>
         </h1>
-        <p className="mt-5 max-w-lg text-base leading-relaxed text-neutral-500">
+        <p className="mt-5 max-w-lg text-base leading-relaxed text-[#4d6b3a]">
           Master 3,000 essential words through a step-by-step learning path.
           Unlock modules as you progress and build real fluency.
         </p>
@@ -53,25 +54,24 @@ export default async function Home() {
         <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
           <Link
             href="/auth/signup"
-            className="rounded-full bg-[#1D1D1F] px-8 py-3.5 text-sm font-medium text-white shadow-[0_4px_14px_rgb(0,0,0,0.12)] transition-transform duration-300 hover:scale-[1.02] hover:opacity-90"
+            className="duo-btn-primary px-8 py-3.5 text-sm"
           >
             Start Learning for Free →
           </Link>
           <Link
             href="/auth/signin"
-            className="rounded-full border border-neutral-200/60 bg-white px-8 py-3.5 text-sm font-medium text-[#1D1D1F] shadow-[0_4px_14px_rgb(0,0,0,0.04)] transition-transform duration-300 hover:scale-[1.02]"
+            className="duo-btn-secondary px-8 py-3.5 text-sm"
           >
             Sign In
           </Link>
         </div>
         <Link
           href="/dashboard"
-          className="mt-3 text-xs text-neutral-600 transition-colors hover:text-neutral-900"
+          className="mt-4 text-xs font-bold text-[#4d6b3a] transition-colors hover:text-[#2c5015]"
         >
           Continue as Guest →
         </Link>
 
-        {/* Feature cards */}
         <div className="mt-20 grid w-full max-w-3xl grid-cols-1 gap-4 sm:grid-cols-3">
           {[
             {
@@ -92,13 +92,13 @@ export default async function Home() {
           ].map((feature) => (
             <div
               key={feature.title}
-              className="rounded-3xl border border-neutral-200/60 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-transform duration-300 hover:scale-[1.02]"
+              className="duo-card p-6 transition-transform duration-300 hover:-translate-y-1"
             >
               <div className="mb-3 text-3xl">{feature.icon}</div>
-              <h3 className="mb-1.5 text-sm font-semibold tracking-tight text-[#1D1D1F]">
+              <h3 className="mb-1.5 text-sm font-extrabold tracking-tight text-[#2c5015]">
                 {feature.title}
               </h3>
-              <p className="text-xs leading-relaxed text-neutral-500">
+              <p className="text-xs leading-relaxed text-[#4d6b3a]">
                 {feature.desc}
               </p>
             </div>
@@ -106,8 +106,7 @@ export default async function Home() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-neutral-200/60 py-6 text-center text-xs text-neutral-400">
+      <footer className="border-t-2 border-[#d7f4c9] py-6 text-center text-xs text-[#7f9f69]">
         <p>© 2024 NUSlat · Built for learners everywhere 🌍</p>
       </footer>
     </div>

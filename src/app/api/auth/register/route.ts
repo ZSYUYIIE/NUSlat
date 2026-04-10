@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { connectDB } from "@/lib/db";
+import {
+  createEmailVerificationToken,
+  isEmailVerificationConfigured,
+  sendVerificationEmail,
+} from "@/lib/email-verification";
 import User from "@/models/User";
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, password } = await request.json();
+    const { name, email, password, guestMilestones } = await request.json();
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+    const normalizedName = String(name || "").trim();
 
-    if (!name || !email || !password) {
+    if (!normalizedName || !normalizedEmail || !password) {
       return NextResponse.json(
         { error: "Name, email, and password are required" },
         { status: 400 }
@@ -23,7 +30,7 @@ export async function POST(request: NextRequest) {
 
     await connectDB();
 
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return NextResponse.json(
         { error: "An account with this email already exists" },
@@ -33,15 +40,51 @@ export async function POST(request: NextRequest) {
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
+    // Initialize completedMilestones with guestMilestones if provided, removing duplicates
+    let completedMilestones: string[] = [];
+    if (guestMilestones && Array.isArray(guestMilestones)) {
+      completedMilestones = [...new Set(guestMilestones)];
+    }
+
+    const verificationRequired = isEmailVerificationConfigured();
+
+    let tokenHash: string | undefined;
+    let expiresAt: Date | undefined;
+    let plainToken: string | undefined;
+
+    if (verificationRequired) {
+      const tokenData = createEmailVerificationToken();
+      plainToken = tokenData.plainToken;
+      tokenHash = tokenData.tokenHash;
+      expiresAt = tokenData.expiresAt;
+    }
+
     const user = await User.create({
-      name,
-      email: email.toLowerCase(),
+      name: normalizedName,
+      email: normalizedEmail,
       password: hashedPassword,
+      completedMilestones,
+      isEmailVerified: !verificationRequired,
+      emailVerifiedAt: verificationRequired ? undefined : new Date(),
+      emailVerificationToken: tokenHash,
+      emailVerificationExpires: expiresAt,
     });
+
+    const emailResult = verificationRequired
+      ? await sendVerificationEmail({
+          to: normalizedEmail,
+          name: normalizedName,
+          plainToken: plainToken!,
+        })
+      : { sent: false };
 
     return NextResponse.json(
       {
-        message: "Account created successfully",
+        message: verificationRequired
+          ? "Account created. Please verify your email before signing in."
+          : "Account created successfully.",
+        emailVerificationRequired: verificationRequired,
+        verificationEmailSent: emailResult.sent,
         user: {
           id: user._id.toString(),
           name: user.name,
@@ -52,6 +95,25 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("Registration error:", error);
+
+    const message =
+      error instanceof Error ? error.message.toLowerCase() : "unknown";
+    const isDbUnavailable =
+      message.includes("econnrefused") ||
+      message.includes("querysrv") ||
+      message.includes("timed out") ||
+      message.includes("mongodb");
+
+    if (isDbUnavailable) {
+      return NextResponse.json(
+        {
+          error:
+            "Service temporarily unavailable. Database connection failed. Please try again shortly.",
+        },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
