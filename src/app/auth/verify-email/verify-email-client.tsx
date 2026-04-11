@@ -125,14 +125,25 @@ export default function VerifyEmailClient() {
 
           <div className="space-y-3">
             {state !== "verified" && (
-              <button
-                type="button"
-                onClick={resendVerification}
-                disabled={resending}
-                className="duo-btn-secondary w-full px-4 py-3 text-sm disabled:opacity-60"
-              >
-                {resending ? "Sending link..." : "Resend verification email"}
-              </button>
+              <>
+                {state === "error" && (
+                  <p className="text-center text-xs text-red-500">
+                    Link expired or invalid? Request a new one below.
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={resendVerification}
+                  disabled={resending}
+                  className={`w-full px-4 py-3 text-sm disabled:opacity-60 ${
+                    state === "error"
+                      ? "duo-btn-primary"
+                      : "duo-btn-secondary"
+                  }`}
+                >
+                  {resending ? "Sending link..." : "Resend verification email"}
+                </button>
+              </>
             )}
 
             <Link

@@ -30,11 +30,18 @@ export function hashEmailVerificationToken(token: string) {
 }
 
 function getBaseUrl() {
-  return (
-    process.env.AUTH_URL ||
-    process.env.NEXTAUTH_URL ||
-    "http://localhost:3000"
-  );
+  const url = process.env.AUTH_URL || process.env.NEXTAUTH_URL;
+  if (!url) {
+    if (process.env.NODE_ENV === "production") {
+      console.error(
+        "[email-verification] AUTH_URL / NEXTAUTH_URL is not set in production. " +
+          "Verification links will point to localhost and will not work for users. " +
+          "Set AUTH_URL in your environment variables."
+      );
+    }
+    return "http://localhost:3000";
+  }
+  return url;
 }
 
 function buildVerificationUrl(email: string, plainToken: string) {

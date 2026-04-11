@@ -4,9 +4,19 @@ import {
   createEmailVerificationToken,
   sendVerificationEmail,
 } from "@/lib/email-verification";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import User from "@/models/User";
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+  const rl = checkRateLimit({ key: `resend-verify:${ip}`, limit: 5, windowMs: 60 * 60 * 1000 });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait before requesting another verification email." },
+      { status: 429 }
+    );
+  }
+
   try {
     const { email } = await request.json();
     const normalizedEmail = String(email || "").trim().toLowerCase();

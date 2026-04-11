@@ -10,6 +10,7 @@ const VALID_MILESTONES = getChapterSequence();
 export interface UseMilestonesReturn {
   completedMilestones: string[];
   completeModule: (moduleId: string) => Promise<void>;
+  resetProgress: () => Promise<void>;
   error: string | null;
   clearError: () => void;
   /** true while session status is resolving or initial data is being loaded */
@@ -28,24 +29,22 @@ function useIsHydrated() {
 }
 
 /** Reads milestone progress from localStorage as a Promise (always async). */
-function readGuestProgress(): Promise<string[]> {
-  return Promise.resolve().then(() => {
-    try {
-      const stored = localStorage.getItem(GUEST_STORAGE_KEY);
-      if (stored) {
-        const parsed: unknown = JSON.parse(stored);
-        if (
-          Array.isArray(parsed) &&
-          parsed.every((v) => typeof v === "string")
-        ) {
-          return normalizeProgressIds(parsed as string[]);
-        }
+async function readGuestProgress(): Promise<string[]> {
+  try {
+    const stored = localStorage.getItem(GUEST_STORAGE_KEY);
+    if (stored) {
+      const parsed: unknown = JSON.parse(stored);
+      if (
+        Array.isArray(parsed) &&
+        parsed.every((v) => typeof v === "string")
+      ) {
+        return normalizeProgressIds(parsed as string[]);
       }
-    } catch {
-      // Malformed storage — start fresh
     }
-    return [];
-  });
+  } catch {
+    // Malformed storage — start fresh
+  }
+  return [];
 }
 
 /**
@@ -136,7 +135,8 @@ export function useMilestones(): UseMilestonesReturn {
           try {
             localStorage.setItem(GUEST_STORAGE_KEY, JSON.stringify(next));
           } catch {
-            // Quota exceeded or private browsing — ignore
+            // Quota exceeded or private browsing — notify the user
+            setError("Progress could not be saved locally. Your browser may be in private mode or storage is full.");
           }
           return next;
         });
@@ -147,9 +147,34 @@ export function useMilestones(): UseMilestonesReturn {
 
   const clearError = useCallback(() => setError(null), []);
 
+  const resetProgress = useCallback(async () => {
+    setError(null);
+    if (isAuthenticated) {
+      try {
+        const res = await fetch("/api/milestones", { method: "DELETE" });
+        if (!res.ok) {
+          const data = await res.json();
+          setError(data.error ?? "Failed to reset progress.");
+          return;
+        }
+      } catch {
+        setError("Network error. Please try again.");
+        return;
+      }
+    } else {
+      try {
+        localStorage.removeItem(GUEST_STORAGE_KEY);
+      } catch {
+        // ignore
+      }
+    }
+    setCompletedMilestones([]);
+  }, [isAuthenticated]);
+
   return {
     completedMilestones,
     completeModule,
+    resetProgress,
     error,
     clearError,
     loading: !hydrated || isSessionLoading || dataLoading,
