@@ -10,18 +10,25 @@ import { playThaiAudio } from "@/lib/audio";
 export default function VocabularyClient() {
   const searchParams = useSearchParams();
   const queryLevel = searchParams.get("level") ?? "all";
-  const queryChapter = searchParams.get("chapter") ?? "all";
+  const queryChapterOrder = searchParams.get("chapterOrder") ?? "all";
 
   const [levelFilter, setLevelFilter] = useState<string>(queryLevel);
-  const [chapterFilter, setChapterFilter] = useState<string>(queryChapter);
+  const [chapterFilter, setChapterFilter] = useState<string>(queryChapterOrder);
   const [isSpeakingWord, setIsSpeakingWord] = useState<string | null>(null);
   const [flippedCards, setFlippedCards] = useState<Record<string, boolean>>({});
 
   const chapterOptions = useMemo(() => {
-    if (levelFilter === "all") {
-      return MODULES.flatMap((module) => getChaptersByModule(module.id));
-    }
-    return getChaptersByModule(levelFilter);
+    const scopedLevels =
+      levelFilter === "all"
+        ? MODULES
+        : MODULES.filter((module) => module.id === levelFilter);
+
+    const maxChapter = Math.max(
+      ...scopedLevels.map((module) => module.chapters.length),
+      0
+    );
+
+    return Array.from({ length: maxChapter }, (_, idx) => idx + 1);
   }, [levelFilter]);
 
   const words = useMemo(() => {
@@ -32,7 +39,7 @@ export default function VocabularyClient() {
 
     return scopedModules.flatMap((module) => {
       const chapters = getChaptersByModule(module.id).filter((chapter) =>
-        chapterFilter === "all" ? true : chapter.id === chapterFilter
+        chapterFilter === "all" ? true : chapter.order === Number(chapterFilter)
       );
 
       return chapters.flatMap((chapter) =>
@@ -100,9 +107,9 @@ export default function VocabularyClient() {
               className="w-full rounded-xl border border-[#d7f4c9] bg-white px-3 py-2 font-bold text-[#2c5015]"
             >
               <option value="all">All Chapters</option>
-              {chapterOptions.map((chapter) => (
-                <option key={chapter.id} value={chapter.id}>
-                  {(MODULES.find((module) => module.id === chapter.moduleId)?.title ?? "Level")} • {chapter.title}
+              {chapterOptions.map((chapterOrder) => (
+                <option key={chapterOrder} value={chapterOrder}>
+                  Chapter {chapterOrder}
                 </option>
               ))}
             </select>
