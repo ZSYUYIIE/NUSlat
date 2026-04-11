@@ -10,7 +10,6 @@ interface ModuleCardProps {
   isLocked: boolean;
   isActive: boolean;
   completedChapters: number;
-  nextChapterId: string | null;
 }
 
 export default function ModuleCard({
@@ -19,7 +18,6 @@ export default function ModuleCard({
   isLocked,
   isActive,
   completedChapters,
-  nextChapterId,
 }: ModuleCardProps) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -28,9 +26,7 @@ export default function ModuleCard({
     if (isLocked || loading) return;
     setLoading(true);
     try {
-      const chapterId = nextChapterId ?? module.chapters[0]?.id;
-      if (!chapterId) return;
-      router.push(`/learn/${module.id}?chapter=${chapterId}`);
+      router.push(`/learn/${module.id}`);
     } finally {
       setLoading(false);
     }

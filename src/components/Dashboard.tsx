@@ -6,7 +6,6 @@ import {
   MODULES,
   getChapterSequence,
   getCompletedChapterCountByModule,
-  getNextIncompleteChapterInModule,
 } from "@/lib/modules";
 import ModuleCard from "@/components/ModuleCard";
 import { useMilestones } from "@/hooks/useMilestones";
@@ -40,7 +39,6 @@ export default function Dashboard() {
         isLocked: true,
         isActive: false,
         completedChapters: 0,
-        nextChapterId: null,
       };
     }
 
@@ -58,12 +56,7 @@ export default function Dashboard() {
 
     const isLocked = !previousModuleComplete;
     const isActive = !isLocked;
-    const nextChapterId = getNextIncompleteChapterInModule(
-      moduleData.id,
-      completedMilestones
-    );
-
-    return { isCompleted, isLocked, isActive, completedChapters, nextChapterId };
+    return { isCompleted, isLocked, isActive, completedChapters };
   };
 
   return (
@@ -187,7 +180,6 @@ export default function Dashboard() {
                 isLocked,
                 isActive,
                 completedChapters,
-                nextChapterId,
               } = getModuleStatus(module.id, index);
               return (
                 <div key={module.id}>
@@ -197,7 +189,6 @@ export default function Dashboard() {
                     isLocked={isLocked}
                     isActive={isActive}
                     completedChapters={completedChapters}
-                    nextChapterId={nextChapterId}
                   />
                   {index < MODULES.length - 1 && (
                     <div className="flex justify-center py-2">

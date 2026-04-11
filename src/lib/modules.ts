@@ -20,16 +20,16 @@ export interface Chapter {
 export const MODULES: Module[] = [
   {
     id: "1k",
-    title: "1,000 Words",
+    title: "Thai Level 1",
     description:
-      "Master your first 1,000 essential vocabulary words and build a solid foundation.",
+      "Build beginner Thai fundamentals with guided chapter practice.",
     xp: 500,
     icon: "🌱",
     lessons: 20,
     chapters: [
-      { id: "1k-ch1", title: "Greetings", order: 1 },
-      { id: "1k-ch2", title: "Daily Essentials", order: 2 },
-      { id: "1k-ch3", title: "People & Places", order: 3 },
+      { id: "1k-ch1", title: "Chapter 1", order: 1 },
+      { id: "1k-ch2", title: "Chapter 2", order: 2 },
+      { id: "1k-ch3", title: "Chapter 3", order: 3 },
     ],
     gradient: "from-emerald-500 to-teal-500",
     borderColor: "border-emerald-200",
@@ -37,16 +37,16 @@ export const MODULES: Module[] = [
   },
   {
     id: "2k",
-    title: "2,000 Words",
+    title: "Thai Level 2",
     description:
-      "Expand your vocabulary to 2,000 words and tackle intermediate topics.",
+      "Grow intermediate fluency through structured chapter progression.",
     xp: 1000,
     icon: "🌿",
     lessons: 25,
     chapters: [
-      { id: "2k-ch1", title: "Food & Shopping", order: 1 },
-      { id: "2k-ch2", title: "Travel & Directions", order: 2 },
-      { id: "2k-ch3", title: "School & Work", order: 3 },
+      { id: "2k-ch1", title: "Chapter 1", order: 1 },
+      { id: "2k-ch2", title: "Chapter 2", order: 2 },
+      { id: "2k-ch3", title: "Chapter 3", order: 3 },
     ],
     gradient: "from-blue-500 to-indigo-500",
     borderColor: "border-blue-200",
@@ -54,16 +54,16 @@ export const MODULES: Module[] = [
   },
   {
     id: "3k",
-    title: "3,000 Words",
+    title: "Thai Level 3",
     description:
-      "Achieve advanced vocabulary mastery with 3,000 words and complex structures.",
+      "Master advanced Thai usage with deeper chapter-based practice.",
     xp: 1500,
     icon: "🌳",
     lessons: 30,
     chapters: [
-      { id: "3k-ch1", title: "Health & Emotions", order: 1 },
-      { id: "3k-ch2", title: "Culture & Media", order: 2 },
-      { id: "3k-ch3", title: "Debate & Opinions", order: 3 },
+      { id: "3k-ch1", title: "Chapter 1", order: 1 },
+      { id: "3k-ch2", title: "Chapter 2", order: 2 },
+      { id: "3k-ch3", title: "Chapter 3", order: 3 },
     ],
     gradient: "from-violet-500 to-purple-500",
     borderColor: "border-violet-200",

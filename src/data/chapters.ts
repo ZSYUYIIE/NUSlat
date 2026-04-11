@@ -12,7 +12,7 @@ const CHAPTERS: ChapterContent[] = [
   {
     id: "1k-ch1",
     moduleId: "1k",
-    title: "Greetings",
+    title: "Chapter 1",
     order: 1,
     lessons: [
       {
@@ -52,7 +52,7 @@ const CHAPTERS: ChapterContent[] = [
   {
     id: "1k-ch2",
     moduleId: "1k",
-    title: "Daily Essentials",
+    title: "Chapter 2",
     order: 2,
     lessons: [
       {
@@ -92,7 +92,7 @@ const CHAPTERS: ChapterContent[] = [
   {
     id: "1k-ch3",
     moduleId: "1k",
-    title: "People & Places",
+    title: "Chapter 3",
     order: 3,
     lessons: [
       {
@@ -132,7 +132,7 @@ const CHAPTERS: ChapterContent[] = [
   {
     id: "2k-ch1",
     moduleId: "2k",
-    title: "Food & Shopping",
+    title: "Chapter 1",
     order: 1,
     lessons: [
       {
@@ -164,7 +164,7 @@ const CHAPTERS: ChapterContent[] = [
   {
     id: "2k-ch2",
     moduleId: "2k",
-    title: "Travel & Directions",
+    title: "Chapter 2",
     order: 2,
     lessons: [
       {
@@ -196,7 +196,7 @@ const CHAPTERS: ChapterContent[] = [
   {
     id: "2k-ch3",
     moduleId: "2k",
-    title: "School & Work",
+    title: "Chapter 3",
     order: 3,
     lessons: [
       {
@@ -228,7 +228,7 @@ const CHAPTERS: ChapterContent[] = [
   {
     id: "3k-ch1",
     moduleId: "3k",
-    title: "Health & Emotions",
+    title: "Chapter 1",
     order: 1,
     lessons: [
       {
@@ -260,7 +260,7 @@ const CHAPTERS: ChapterContent[] = [
   {
     id: "3k-ch2",
     moduleId: "3k",
-    title: "Culture & Media",
+    title: "Chapter 2",
     order: 2,
     lessons: [
       {
@@ -292,7 +292,7 @@ const CHAPTERS: ChapterContent[] = [
   {
     id: "3k-ch3",
     moduleId: "3k",
-    title: "Debate & Opinions",
+    title: "Chapter 3",
     order: 3,
     lessons: [
       {
