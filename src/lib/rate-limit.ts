@@ -15,12 +15,13 @@ const buckets = new Map<string, BucketEntry>();
 
 // Prune stale entries every 5 minutes to avoid unbounded memory growth.
 if (typeof setInterval !== "undefined") {
-  setInterval(() => {
+  const pruneInterval = setInterval(() => {
     const now = Date.now();
     for (const [key, entry] of buckets) {
       if (entry.resetAt <= now) buckets.delete(key);
     }
   }, 5 * 60 * 1000);
+  pruneInterval.unref?.();
 }
 
 export interface RateLimitOptions {
