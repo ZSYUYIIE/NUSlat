@@ -29,24 +29,22 @@ function useIsHydrated() {
 }
 
 /** Reads milestone progress from localStorage as a Promise (always async). */
-function readGuestProgress(): Promise<string[]> {
-  return Promise.resolve().then(() => {
-    try {
-      const stored = localStorage.getItem(GUEST_STORAGE_KEY);
-      if (stored) {
-        const parsed: unknown = JSON.parse(stored);
-        if (
-          Array.isArray(parsed) &&
-          parsed.every((v) => typeof v === "string")
-        ) {
-          return normalizeProgressIds(parsed as string[]);
-        }
+async function readGuestProgress(): Promise<string[]> {
+  try {
+    const stored = localStorage.getItem(GUEST_STORAGE_KEY);
+    if (stored) {
+      const parsed: unknown = JSON.parse(stored);
+      if (
+        Array.isArray(parsed) &&
+        parsed.every((v) => typeof v === "string")
+      ) {
+        return normalizeProgressIds(parsed as string[]);
       }
-    } catch {
-      // Malformed storage — start fresh
     }
-    return [];
-  });
+  } catch {
+    // Malformed storage — start fresh
+  }
+  return [];
 }
 
 /**
@@ -137,7 +135,8 @@ export function useMilestones(): UseMilestonesReturn {
           try {
             localStorage.setItem(GUEST_STORAGE_KEY, JSON.stringify(next));
           } catch {
-            // Quota exceeded or private browsing — ignore
+            // Quota exceeded or private browsing — notify the user
+            setError("Progress could not be saved locally. Your browser may be in private mode or storage is full.");
           }
           return next;
         });

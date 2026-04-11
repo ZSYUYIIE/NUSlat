@@ -50,7 +50,7 @@ export async function DELETE() {
 
     await User.updateOne(
       { email: session.user.email },
-      { $set: { completedChapters: [], completedMilestones: [] } }
+      { $set: { completedChapters: [], completedMilestones: [] } } // clear both for a full reset
     );
 
     return NextResponse.json({ message: "Progress reset." });
@@ -112,7 +112,6 @@ export async function POST(request: NextRequest) {
 
     const normalized = normalizeProgressIds(existing);
     user.completedChapters = normalized;
-    user.completedMilestones = normalized;
     await user.save();
 
     return NextResponse.json({

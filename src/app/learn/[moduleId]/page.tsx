@@ -26,18 +26,20 @@ export default function LearnPage() {
 
   const moduleData = MODULES.find((moduleItem) => moduleItem.id === moduleId);
 
-  if (!moduleId || !moduleData) {
+  if (!moduleData) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F5F5F7]">
-        <div className="text-neutral-500">Loading level...</div>
-      </div>
-    );
-  }
-
-  if (chapters.length === 0) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F5F5F7]">
-        <div className="text-neutral-500">No chapters found for this level.</div>
+      <div className="duo-shell flex min-h-screen flex-col">
+        <AppHeader />
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 text-center">
+          <p className="text-4xl">🔍</p>
+          <h1 className="text-xl font-extrabold text-[#2c5015]">Level not found</h1>
+          <p className="text-sm text-[#4d6b3a]">
+            The level <strong>{moduleId}</strong> does not exist.
+          </p>
+          <a href="/dashboard" className="duo-btn-primary px-6 py-2.5 text-sm">
+            Back to Dashboard
+          </a>
+        </div>
       </div>
     );
   }
