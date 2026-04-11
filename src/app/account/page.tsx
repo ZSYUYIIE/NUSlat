@@ -43,7 +43,11 @@ export default function AccountPage() {
                   Sign Out
                 </button>
                 <button
-                  onClick={() => signOut({ callbackUrl: "/auth/signin" })}
+                  onClick={() =>
+                    signOut({
+                      callbackUrl: `/auth/signin?email=${encodeURIComponent(session?.user?.email ?? "")}`,
+                    })
+                  }
                   className="duo-btn-primary px-4 py-2 text-sm"
                 >
                   Switch Account

@@ -7,9 +7,19 @@ import {
   sendVerificationEmail,
 } from "@/lib/email-verification";
 import { normalizeProgressIds } from "@/lib/modules";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import User from "@/models/User";
 
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request);
+  const rl = checkRateLimit({ key: `register:${ip}`, limit: 5, windowMs: 60 * 60 * 1000 });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many registration attempts. Please try again later." },
+      { status: 429 }
+    );
+  }
+
   try {
     const { name, email, password, guestMilestones } = await request.json();
     const normalizedEmail = String(email || "").trim().toLowerCase();
@@ -67,7 +77,6 @@ export async function POST(request: NextRequest) {
       name: normalizedName,
       email: normalizedEmail,
       password: hashedPassword,
-      completedMilestones,
       completedChapters: completedMilestones,
       isEmailVerified: !verificationRequired,
       emailVerifiedAt: verificationRequired ? undefined : new Date(),

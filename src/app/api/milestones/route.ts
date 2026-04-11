@@ -38,6 +38,31 @@ export async function GET() {
   }
 }
 
+export async function DELETE() {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    await connectDB();
+
+    await User.updateOne(
+      { email: session.user.email },
+      { $set: { completedChapters: [], completedMilestones: [] } } // clear both for a full reset
+    );
+
+    return NextResponse.json({ message: "Progress reset." });
+  } catch (error) {
+    console.error("Reset milestones error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
@@ -87,7 +112,6 @@ export async function POST(request: NextRequest) {
 
     const normalized = normalizeProgressIds(existing);
     user.completedChapters = normalized;
-    user.completedMilestones = normalized;
     await user.save();
 
     return NextResponse.json({

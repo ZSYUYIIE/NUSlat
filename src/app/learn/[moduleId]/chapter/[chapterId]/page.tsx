@@ -11,6 +11,18 @@ import { playThaiAudio } from "@/lib/audio";
 
 type PracticeMode = "quiz" | "writing";
 
+// Writing evaluation thresholds — adjust these to tune difficulty.
+const WRITING_THRESHOLDS = {
+  /** Fraction of the template character that must be covered by user strokes. */
+  coverage: 0.24,
+  /** Fraction of user strokes that must fall on the template character. */
+  precision: 0.20,
+  /** How close the user's ink density is to the template (1 = perfect). */
+  legibility: 0.45,
+  /** Weighted composite score: coverage×0.64 + precision×0.26 + legibility×0.10. */
+  score: 0.32,
+} as const;
+
 interface WritingResult {
   score: number;
   coverage: number;
@@ -228,10 +240,10 @@ export default function ChapterPracticePage() {
     const legibility = Math.max(0, 1 - Math.max(0, Math.abs(1 - density)));
     const score = coverage * 0.64 + precision * 0.26 + legibility * 0.1;
     const passed =
-      coverage >= 0.24 &&
-      precision >= 0.2 &&
-      legibility >= 0.45 &&
-      score >= 0.32;
+      coverage >= WRITING_THRESHOLDS.coverage &&
+      precision >= WRITING_THRESHOLDS.precision &&
+      legibility >= WRITING_THRESHOLDS.legibility &&
+      score >= WRITING_THRESHOLDS.score;
 
     setWritingResult({ score, coverage, precision, legibility, passed });
   };
