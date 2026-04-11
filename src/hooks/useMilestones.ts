@@ -10,6 +10,7 @@ const VALID_MILESTONES = getChapterSequence();
 export interface UseMilestonesReturn {
   completedMilestones: string[];
   completeModule: (moduleId: string) => Promise<void>;
+  resetProgress: () => Promise<void>;
   error: string | null;
   clearError: () => void;
   /** true while session status is resolving or initial data is being loaded */
@@ -147,9 +148,34 @@ export function useMilestones(): UseMilestonesReturn {
 
   const clearError = useCallback(() => setError(null), []);
 
+  const resetProgress = useCallback(async () => {
+    setError(null);
+    if (isAuthenticated) {
+      try {
+        const res = await fetch("/api/milestones", { method: "DELETE" });
+        if (!res.ok) {
+          const data = await res.json();
+          setError(data.error ?? "Failed to reset progress.");
+          return;
+        }
+      } catch {
+        setError("Network error. Please try again.");
+        return;
+      }
+    } else {
+      try {
+        localStorage.removeItem(GUEST_STORAGE_KEY);
+      } catch {
+        // ignore
+      }
+    }
+    setCompletedMilestones([]);
+  }, [isAuthenticated]);
+
   return {
     completedMilestones,
     completeModule,
+    resetProgress,
     error,
     clearError,
     loading: !hydrated || isSessionLoading || dataLoading,

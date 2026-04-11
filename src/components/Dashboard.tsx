@@ -14,7 +14,7 @@ import { useMilestones } from "@/hooks/useMilestones";
 
 export default function Dashboard() {
   const { data: session } = useSession();
-  const { completedMilestones, error, clearError, loading } =
+  const { completedMilestones, error, clearError, loading, resetProgress } =
     useMilestones();
 
   const isGuest = !session?.user;
@@ -133,6 +133,20 @@ export default function Dashboard() {
               <span>Beginner</span>
               <span>Advanced</span>
             </div>
+            {completedCount > 0 && (
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={() => {
+                    if (confirm("Reset all progress? This cannot be undone.")) {
+                      resetProgress();
+                    }
+                  }}
+                  className="text-xs font-semibold text-red-400 hover:text-red-600"
+                >
+                  Reset progress
+                </button>
+              </div>
+            )}
           </div>
         )}
 
