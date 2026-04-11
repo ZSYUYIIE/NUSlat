@@ -207,12 +207,6 @@ export const CHARACTER_STROKE_GUIDES: Record<string, string[]> = {
     "Drop into the body.",
     "Finish with the lower tail.",
   ],
-  "ฮ": [
-    "Draw the top head stroke.",
-    "Curve into the rounded body.",
-    "Finish with the lower tail.",
-  ],
-
   // ── Vowel marks ─────────────────────────────────────────────────────────────
   "า": ["Write the vertical stroke downward.", "Add the small top hook to the right."],
   "ิ": ["Place the short upper vowel mark above the consonant, pressing lightly."],
@@ -233,7 +227,6 @@ export const CHARACTER_STROKE_GUIDES: Record<string, string[]> = {
   "เ": ["Write the leading short vertical vowel before the consonant."],
   "แ": ["Write two short vertical vowel strokes before the consonant."],
   "ะ": ["Add the short vowel mark after the consonant.", "Place the small circle below."],
-  "ั": ["Place the sara a mark above the consonant."],
   "ํ": ["Write the small circle above the consonant (nikhahit)."],
   "ฺ": ["Place the small subscript dot below the consonant (phinthu)."],
 };
