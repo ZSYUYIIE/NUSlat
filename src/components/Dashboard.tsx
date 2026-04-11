@@ -2,11 +2,13 @@
 
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import AppHeader from "@/components/AppHeader";
 import {
   MODULES,
   getChapterSequence,
   getCompletedChapterCountByModule,
 } from "@/lib/modules";
+import { getCharacterStrokeGuide } from "@/lib/strokes";
 import ModuleCard from "@/components/ModuleCard";
 import { useMilestones } from "@/hooks/useMilestones";
 
@@ -30,6 +32,8 @@ export default function Dashboard() {
 
   const completedCount = completedMilestones.length;
   const progressPct = Math.round((completedCount / allChapterIds.length) * 100);
+  const spotlightCharacter = "ส";
+  const spotlightGuide = getCharacterStrokeGuide(spotlightCharacter);
 
   const getModuleStatus = (moduleId: string, index: number) => {
     const moduleData = MODULES.find((item) => item.id === moduleId);
@@ -61,28 +65,7 @@ export default function Dashboard() {
 
   return (
     <div className="duo-shell min-h-screen">
-      <div className="sticky top-0 z-20 border-b-2 border-[#d7f4c9] bg-[#f6ffef]/95 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-2 px-4 py-3.5 sm:px-6">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🦜</span>
-            <span className="text-lg font-extrabold tracking-tight text-[#2c5015]">
-              NUSlat
-            </span>
-          </div>
-          <div className="flex w-full items-center gap-2.5 sm:w-auto">
-            <div className="duo-chip flex flex-1 items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-[#3f6f25] sm:flex-initial">
-              <span>🎯</span>
-              <span>
-                {completedCount}/{allChapterIds.length} chapters
-              </span>
-            </div>
-            <div className="duo-chip flex flex-1 items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-[#3f6f25] sm:flex-initial">
-              <span>⚡</span>
-              <span>{totalXP} XP</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <AppHeader />
 
       {/* Guest sign-in nudge */}
       {isGuest && (
@@ -98,6 +81,19 @@ export default function Dashboard() {
       )}
 
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
+        <div className="mb-4 flex w-full items-center gap-2.5">
+          <div className="duo-chip flex flex-1 items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-[#3f6f25] sm:flex-initial">
+            <span>🎯</span>
+            <span>
+              {completedCount}/{allChapterIds.length} chapters
+            </span>
+          </div>
+          <div className="duo-chip flex flex-1 items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-[#3f6f25] sm:flex-initial">
+            <span>⚡</span>
+            <span>{totalXP} XP</span>
+          </div>
+        </div>
+
         {/* Welcome */}
         <div className="mb-8 text-center sm:mb-10">
           <h1 className="text-2xl font-extrabold tracking-tight text-[#2c5015] sm:text-4xl">
@@ -139,6 +135,27 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
+        <div className="duo-card mb-8 p-6">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="text-sm font-extrabold tracking-tight text-[#2c5015]">
+              Character Writing Spotlight
+            </h2>
+            <Link href="/vocabulary" className="text-xs font-bold text-[#4d6b3a] hover:text-[#2c5015]">
+              Open Vocabulary
+            </Link>
+          </div>
+          <div className="mb-3 rounded-2xl border border-[#d7f4c9] bg-[#f6ffef] p-4">
+            <p className="text-5xl font-extrabold text-[#2c5015]">{spotlightCharacter}</p>
+          </div>
+          <ol className="space-y-1.5 text-xs text-[#4d6b3a]">
+            {spotlightGuide.map((step) => (
+              <li key={step} className="rounded-lg bg-white px-2 py-1.5">
+                {step}
+              </li>
+            ))}
+          </ol>
+        </div>
 
         {/* Error message */}
         {error && (

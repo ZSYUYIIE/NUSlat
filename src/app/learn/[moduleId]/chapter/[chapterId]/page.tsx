@@ -3,10 +3,13 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useMilestones } from "@/hooks/useMilestones";
+import AppHeader from "@/components/AppHeader";
 import { getChapterById } from "@/data/chapters";
 import { getNextChapterId, getModuleByChapterId } from "@/lib/modules";
+import { getCharacterStrokeGuide } from "@/lib/strokes";
+import { playThaiAudio } from "@/lib/audio";
 
-type PracticeMode = "quiz" | "vocab" | "writing";
+type PracticeMode = "quiz" | "writing";
 
 interface WritingResult {
   score: number;
@@ -14,76 +17,6 @@ interface WritingResult {
   precision: number;
   legibility: number;
   passed: boolean;
-}
-
-const STROKE_LIBRARY: Record<string, string[]> = {
-  "ส": [
-    "Arrow -> Draw top head stroke left to right",
-    "Arrow down-right Draw main curve downward",
-    "Arrow -> Add ending tail to the right",
-  ],
-  "ว": [
-    "Arrow -> Draw upper arc from left to right",
-    "Arrow down Draw middle dip stroke",
-    "Arrow -> Finish with right tail",
-  ],
-  "ั": ["Arrow -> Place short top mark left to right"],
-  "ด": [
-    "Arrow -> Draw top line left to right",
-    "Arrow down Draw body downward and curve in",
-  ],
-  "ี": ["Arrow down Place long upper vowel mark top to bottom"],
-  "ข": [
-    "Arrow -> Draw top horizontal guide",
-    "Arrow down-left Draw descending loop stroke",
-    "Arrow -> Finish rightward tail",
-  ],
-  "อ": [
-    "Arrow -> Draw top opener left to right",
-    "Arrow down Draw rounded body downward",
-  ],
-  "บ": [
-    "Arrow -> Draw top line",
-    "Arrow down Draw curved body",
-    "Arrow -> Close right-side tail",
-  ],
-  "ค": [
-    "Arrow -> Draw head stroke",
-    "Arrow down Draw long body curve",
-    "Arrow -> Add terminal hook",
-  ],
-  "ุ": ["Arrow -> Place lower vowel mark beneath character"],
-  "ณ": [
-    "Arrow -> Draw top stroke",
-    "Arrow down Draw central body down",
-    "Arrow -> Add right-side finishing curve",
-  ],
-  "ไ": ["Arrow down Draw leading vowel mark top to bottom"],
-  "ม": [
-    "Arrow -> Draw top horizontal stroke",
-    "Arrow down Draw left body curve",
-    "Arrow -> Complete right body arc",
-  ],
-};
-
-function getStrokeDirectionsForWord(word: string) {
-  const steps: string[] = [];
-  let count = 1;
-
-  for (const char of word) {
-    const charSteps =
-      STROKE_LIBRARY[char] ?? [
-        "Arrow -> Draw top/head guideline left to right",
-        "Arrow down Draw main body from top to bottom",
-      ];
-
-    for (const instruction of charSteps) {
-      steps.push(`Stroke ${count}: ${instruction} (${char})`);
-      count += 1;
-    }
-  }
-
-  return steps;
 }
 
 export default function ChapterPracticePage() {
@@ -96,6 +29,8 @@ export default function ChapterPracticePage() {
 
   const [practiceMode, setPracticeMode] = useState<PracticeMode>("quiz");
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentCharIndex, setCurrentCharIndex] = useState(0);
+  const [strokeStepIndex, setStrokeStepIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
@@ -110,6 +45,13 @@ export default function ChapterPracticePage() {
 
   const chapter = useMemo(() => getChapterById(chapterId), [chapterId]);
 
+  const lessons = chapter?.lessons ?? [];
+  const currentLesson = lessons[currentIndex] ?? null;
+  const progress = lessons.length > 0 ? ((currentIndex + 1) / lessons.length) * 100 : 0;
+  const characters = currentLesson?.thaiWord.split("") ?? [];
+  const selectedCharacter = characters[currentCharIndex] ?? characters[0] ?? "";
+  const strokeSteps = getCharacterStrokeGuide(selectedCharacter);
+
   useEffect(() => {
     if (!chapter || chapter.moduleId !== moduleId) {
       router.push(`/learn/${moduleId}`);
@@ -122,6 +64,7 @@ export default function ChapterPracticePage() {
     setIsCorrect(false);
     setWritingResult(null);
     setPracticeMode("quiz");
+    setStrokeStepIndex(0);
   }, [chapter, moduleId, router]);
 
   useEffect(() => {
@@ -158,7 +101,16 @@ export default function ChapterPracticePage() {
     };
   }, []);
 
-  if (!chapter || chapter.moduleId !== moduleId) {
+  useEffect(() => {
+    setCurrentCharIndex(0);
+    setStrokeStepIndex(0);
+  }, [currentIndex]);
+
+  useEffect(() => {
+    setStrokeStepIndex(0);
+  }, [currentCharIndex]);
+
+  if (!chapter || chapter.moduleId !== moduleId || !currentLesson) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F5F5F7]">
         <div className="text-neutral-500">Loading chapter...</div>
@@ -166,30 +118,11 @@ export default function ChapterPracticePage() {
     );
   }
 
-  const lessons = chapter.lessons;
-  const currentLesson = lessons[currentIndex];
-  const progress = ((currentIndex + 1) / lessons.length) * 100;
-
-  const strokeSteps = getStrokeDirectionsForWord(currentLesson.thaiWord);
-
-  const vocabulary = lessons.map((lesson) => ({
-    thaiWord: lesson.thaiWord,
-    phonetic: lesson.phonetic,
-    meaning: lesson.englishTranslation,
-  }));
-
   const speakThai = (text: string) => {
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
-
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "th-TH";
-    utterance.rate = 0.9;
-    utterance.pitch = 1;
     setIsSpeakingWord(text);
-    utterance.onend = () => setIsSpeakingWord(null);
-    utterance.onerror = () => setIsSpeakingWord(null);
-    window.speechSynthesis.speak(utterance);
+    playThaiAudio(text)
+      .catch(() => undefined)
+      .finally(() => setIsSpeakingWord(null));
   };
 
   const getCanvasPoint = (event: React.PointerEvent<HTMLCanvasElement>) => {
@@ -309,6 +242,19 @@ export default function ChapterPracticePage() {
     setIsAnswered(false);
     setIsCorrect(false);
     setWritingResult(null);
+    setStrokeStepIndex(0);
+  };
+
+  const moveToNextStrokeStep = () => {
+    if (!hasInk) return;
+    if (strokeStepIndex >= strokeSteps.length - 1) return;
+    setStrokeStepIndex((prev) => prev + 1);
+    setHasInk(false);
+  };
+
+  const moveToPrevStrokeStep = () => {
+    if (strokeStepIndex === 0) return;
+    setStrokeStepIndex((prev) => prev - 1);
   };
 
   const handlePrevWord = () => {
@@ -387,7 +333,8 @@ export default function ChapterPracticePage() {
 
   return (
     <div className="duo-shell min-h-screen">
-      <div className="sticky top-0 z-10 border-b-2 border-[#d7f4c9] bg-[#f6ffef]/95">
+      <AppHeader />
+      <div className="border-b-2 border-[#d7f4c9] bg-[#f6ffef]/95">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
           <div>
             <p className="text-xs font-extrabold uppercase tracking-wide text-[#7f9f69]">
@@ -415,7 +362,7 @@ export default function ChapterPracticePage() {
       </div>
 
       <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-        <div className="mb-5 grid grid-cols-3 gap-2 rounded-2xl border border-[#d7f4c9] bg-[#f8ffef] p-2">
+        <div className="mb-5 grid grid-cols-2 gap-2 rounded-2xl border border-[#d7f4c9] bg-[#f8ffef] p-2 sm:max-w-xs">
           <button
             onClick={() => setPracticeMode("quiz")}
             className={`rounded-xl px-3 py-2 text-xs font-extrabold transition-colors sm:text-sm ${
@@ -425,20 +372,21 @@ export default function ChapterPracticePage() {
             Quiz
           </button>
           <button
-            onClick={() => setPracticeMode("vocab")}
-            className={`rounded-xl px-3 py-2 text-xs font-extrabold transition-colors sm:text-sm ${
-              practiceMode === "vocab" ? "bg-[#58cc02] text-white" : "bg-white text-[#4d6b3a]"
-            }`}
-          >
-            Vocabulary
-          </button>
-          <button
             onClick={() => setPracticeMode("writing")}
             className={`rounded-xl px-3 py-2 text-xs font-extrabold transition-colors sm:text-sm ${
               practiceMode === "writing" ? "bg-[#58cc02] text-white" : "bg-white text-[#4d6b3a]"
             }`}
           >
             Writing
+          </button>
+        </div>
+
+        <div className="mb-5 flex justify-end">
+          <button
+            onClick={() => router.push(`/vocabulary?level=${moduleId}&chapter=${chapterId}`)}
+            className="duo-btn-secondary px-4 py-2 text-sm"
+          >
+            Open Vocabulary Page
           </button>
         </div>
 
@@ -514,40 +462,12 @@ export default function ChapterPracticePage() {
           </>
         ) : null}
 
-        {practiceMode === "vocab" ? (
-          <div className="duo-card p-5 sm:p-7">
-            <h3 className="mb-4 text-center text-lg font-extrabold text-[#2c5015]">Vocabulary</h3>
-            <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
-              {vocabulary.map((word, index) => (
-                <div
-                  key={`${chapter.id}-${word.thaiWord}`}
-                  className={`flex items-center justify-between gap-2 rounded-2xl border px-3 py-3 ${
-                    currentIndex === index ? "border-[#8cdb4d] bg-[#f4ffe9]" : "border-[#d7f4c9] bg-white"
-                  }`}
-                >
-                  <button onClick={() => goToWord(index)} className="text-left">
-                    <div className="text-xl font-extrabold text-[#2c5015]">{word.thaiWord}</div>
-                    <div className="text-xs font-bold text-[#6a8a55]">{word.phonetic}</div>
-                    <div className="text-sm text-[#4d6b3a]">{word.meaning}</div>
-                  </button>
-                  <button
-                    onClick={() => speakThai(word.thaiWord)}
-                    className="rounded-full border border-[#bfe89f] bg-[#f6ffef] px-3 py-1.5 text-xs font-extrabold text-[#3e7422]"
-                  >
-                    {isSpeakingWord === word.thaiWord ? "Playing..." : "Listen"}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
         {practiceMode === "writing" ? (
           <div className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
             <div className="rounded-3xl border-2 border-[#2f7a42] bg-[#184f2b] p-4 text-[#ecf9db] sm:p-6">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <p className="text-xs font-extrabold uppercase tracking-wide text-[#b9e8c0]">
-                  Stroke Order Directions
+                  Character Stroke Guide
                 </p>
                 <button
                   onClick={() => speakThai(currentLesson.thaiWord)}
@@ -556,23 +476,59 @@ export default function ChapterPracticePage() {
                   {isSpeakingWord === currentLesson.thaiWord ? "Playing..." : "Listen"}
                 </button>
               </div>
+              <div className="mb-3 flex flex-wrap gap-2">
+                {characters.map((char, index) => (
+                  <button
+                    key={`${char}-${index}`}
+                    onClick={() => setCurrentCharIndex(index)}
+                    className={`rounded-full px-3 py-1 text-sm font-extrabold ${
+                      index === currentCharIndex
+                        ? "bg-[#9ee8a9] text-[#144223]"
+                        : "bg-[#0f3f22] text-[#d7f8cd]"
+                    }`}
+                  >
+                    {char}
+                  </button>
+                ))}
+              </div>
               <p className="mb-2 text-sm">
-                Word: <strong>{currentLesson.thaiWord}</strong>
+                Focus character: <strong>{selectedCharacter}</strong>
               </p>
+              <div className="mb-2 rounded-lg bg-[#0f3f22] px-2.5 py-2 text-xs font-bold text-[#d7f8cd]">
+                Current stroke step: {strokeStepIndex + 1} / {strokeSteps.length}
+              </div>
               <ol className="space-y-1.5 text-xs">
-                {strokeSteps.map((step) => (
+                {strokeSteps.map((step, index) => (
                   <li key={step} className="rounded-lg bg-[#0f3f22] px-2.5 py-1.5">
-                    {step}
+                    <span className={index === strokeStepIndex ? "font-extrabold text-[#9ee8a9]" : ""}>
+                      Step {index + 1}: {step}
+                    </span>
                   </li>
                 ))}
               </ol>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  onClick={moveToPrevStrokeStep}
+                  disabled={strokeStepIndex === 0}
+                  className="rounded-full border border-[#3f9155] bg-[#0f3f22] px-3 py-1.5 text-xs font-bold text-[#d7f8cd] disabled:opacity-50"
+                >
+                  Previous Step
+                </button>
+                <button
+                  onClick={moveToNextStrokeStep}
+                  disabled={!hasInk || strokeStepIndex >= strokeSteps.length - 1}
+                  className="rounded-full border border-[#97de9f] bg-[#c6f7b8] px-3 py-1.5 text-xs font-extrabold text-[#1a582d] disabled:opacity-50"
+                >
+                  Next Stroke Step
+                </button>
+              </div>
               <p className="mt-3 text-xs text-[#b9e8c0]">
-                Aim for readability and direction flow, not perfect tracing.
+                Practice one character first, then continue to the full word.
               </p>
             </div>
 
             <div className="rounded-3xl border-2 border-[#2f7a42] bg-[#184f2b] p-4 text-[#ecf9db] sm:p-6">
-              <div className="relative mb-3 h-56 w-full overflow-hidden rounded-2xl border-2 border-[#3c8d52] bg-[#0f3f22]">
+              <div className="relative mb-3 h-[34rem] w-full overflow-hidden rounded-2xl border-2 border-[#3c8d52] bg-[#0f3f22]">
                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-4">
                   <span className="select-none text-7xl font-extrabold tracking-wide text-[#2c7c40]/70 sm:text-8xl">
                     {currentLesson.thaiWord}

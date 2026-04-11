@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useMilestones } from "@/hooks/useMilestones";
+import AppHeader from "@/components/AppHeader";
 import { getChaptersByModule } from "@/data/chapters";
 import {
   MODULES,
@@ -62,8 +63,9 @@ export default function LearnPage() {
   };
 
   return (
-    <div className="duo-shell min-h-screen px-4 py-8 sm:px-6 sm:py-10">
-      <div className="mx-auto w-full max-w-6xl">
+    <div className="duo-shell min-h-screen">
+      <AppHeader />
+      <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-extrabold uppercase tracking-widest text-[#87a66f]">
@@ -74,12 +76,7 @@ export default function LearnPage() {
             </h1>
             <p className="mt-2 text-sm text-[#4d6b3a]">{moduleData.description}</p>
           </div>
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="duo-btn-secondary px-4 py-2 text-sm"
-          >
-            Back to Dashboard
-          </button>
+          <div className="duo-chip px-3 py-1 text-xs font-bold text-[#3f6f25]">Level Hub</div>
         </div>
 
         <div className="duo-card mb-6 p-5 sm:p-6">
@@ -156,7 +153,7 @@ export default function LearnPage() {
             );
           })}
         </div>
-      </div>
+      </main>
     </div>
   );
 }
