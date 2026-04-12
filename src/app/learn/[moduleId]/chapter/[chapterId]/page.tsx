@@ -50,6 +50,7 @@ export default function ChapterPracticePage() {
   const [savingCompletion, setSavingCompletion] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasInk, setHasInk] = useState(false);
+  const hasInkRef = useRef(false);
   const [writingResult, setWritingResult] = useState<WritingResult | null>(null);
   const [isSpeakingWord, setIsSpeakingWord] = useState<string | null>(null);
 
@@ -98,9 +99,10 @@ export default function ChapterPracticePage() {
     ctx.scale(ratio, ratio);
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
-    ctx.lineWidth = 8;
-    ctx.strokeStyle = "#eef8d8";
+    ctx.lineWidth = 10;
+    ctx.strokeStyle = "#1a1a1a";
     ctx.clearRect(0, 0, width, height);
+    hasInkRef.current = false;
     setHasInk(false);
     setWritingResult(null);
   }, [practiceMode, currentIndex]);
@@ -162,6 +164,7 @@ export default function ChapterPracticePage() {
     const point = getCanvasPoint(event);
     ctx.lineTo(point.x, point.y);
     ctx.stroke();
+    hasInkRef.current = true;
     setHasInk(true);
   };
 
@@ -169,6 +172,9 @@ export default function ChapterPracticePage() {
     if (!isDrawing) return;
     setIsDrawing(false);
     event.currentTarget.releasePointerCapture(event.pointerId);
+    if (hasInkRef.current) {
+      checkWriting();
+    }
   };
 
   const clearCanvas = () => {
@@ -177,22 +183,14 @@ export default function ChapterPracticePage() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    hasInkRef.current = false;
     setHasInk(false);
     setWritingResult(null);
   };
 
   const checkWriting = () => {
     const canvas = canvasRef.current;
-    if (!canvas || !hasInk) {
-      setWritingResult({
-        score: 0,
-        coverage: 0,
-        precision: 0,
-        legibility: 0,
-        passed: false,
-      });
-      return;
-    }
+    if (!canvas) return;
 
     const userCtx = canvas.getContext("2d");
     if (!userCtx) return;
@@ -475,125 +473,169 @@ export default function ChapterPracticePage() {
         ) : null}
 
         {practiceMode === "writing" ? (
-          <div className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
-            <div className="rounded-3xl border-2 border-[#2f7a42] bg-[#184f2b] p-4 text-[#ecf9db] sm:p-6">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <p className="text-xs font-extrabold uppercase tracking-wide text-[#b9e8c0]">
-                  Character Stroke Guide
-                </p>
-                <button
-                  onClick={() => speakThai(currentLesson.thaiWord)}
-                  className="rounded-full border border-[#3f9155] bg-[#0f3f22] px-3 py-1 text-xs font-bold text-[#d7f8cd]"
-                >
-                  {isSpeakingWord === currentLesson.thaiWord ? "Playing..." : "Listen"}
-                </button>
+          <div className="mx-auto max-w-4xl space-y-4">
+            {/* Word info bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#d7f4c9] bg-white px-5 py-4">
+              <div className="flex items-baseline gap-3">
+                <span className="text-4xl font-extrabold text-[#2c5015]">{currentLesson.thaiWord}</span>
+                <span className="text-base font-bold text-[#5a7c45]">{currentLesson.phonetic}</span>
               </div>
-              <div className="mb-3 flex flex-wrap gap-2">
-                {characters.map((char, index) => (
+              <div className="flex flex-wrap items-center gap-2">
+                {characters.length > 1 && characters.map((char, index) => (
                   <button
                     key={`${char}-${index}`}
                     onClick={() => setCurrentCharIndex(index)}
-                    className={`rounded-full px-3 py-1 text-sm font-extrabold ${
+                    className={`h-9 w-9 rounded-xl text-lg font-extrabold transition-colors ${
                       index === currentCharIndex
-                        ? "bg-[#9ee8a9] text-[#144223]"
-                        : "bg-[#0f3f22] text-[#d7f8cd]"
+                        ? "bg-[#58cc02] text-white"
+                        : "bg-[#f0fae6] text-[#2c5015] hover:bg-[#d7f4c9]"
                     }`}
                   >
                     {char}
                   </button>
                 ))}
-              </div>
-              <p className="mb-2 text-sm">
-                Focus character: <strong>{selectedCharacter}</strong>
-              </p>
-              <div className="mb-2 rounded-lg bg-[#0f3f22] px-2.5 py-2 text-xs font-bold text-[#d7f8cd]">
-                Current stroke step: {strokeStepIndex + 1} / {strokeSteps.length}
-              </div>
-              <ol className="space-y-1.5 text-xs">
-                {strokeSteps.map((step, index) => (
-                  <li key={step} className="rounded-lg bg-[#0f3f22] px-2.5 py-1.5">
-                    <span className={index === strokeStepIndex ? "font-extrabold text-[#9ee8a9]" : ""}>
-                      Step {index + 1}: {step}
-                    </span>
-                  </li>
-                ))}
-              </ol>
-              <div className="mt-3 flex flex-wrap gap-2">
                 <button
-                  onClick={moveToPrevStrokeStep}
-                  disabled={strokeStepIndex === 0}
-                  className="rounded-full border border-[#3f9155] bg-[#0f3f22] px-3 py-1.5 text-xs font-bold text-[#d7f8cd] disabled:opacity-50"
+                  onClick={() => speakThai(currentLesson.thaiWord)}
+                  className="rounded-full border border-[#bfe89f] bg-[#f6ffef] px-4 py-1.5 text-xs font-extrabold text-[#3e7422] hover:bg-[#e5f9d0]"
                 >
-                  Previous Step
-                </button>
-                <button
-                  onClick={moveToNextStrokeStep}
-                  disabled={!hasInk || strokeStepIndex >= strokeSteps.length - 1}
-                  className="rounded-full border border-[#97de9f] bg-[#c6f7b8] px-3 py-1.5 text-xs font-extrabold text-[#1a582d] disabled:opacity-50"
-                >
-                  Next Stroke Step
+                  {isSpeakingWord === currentLesson.thaiWord ? "Playing..." : "▶ Listen"}
                 </button>
               </div>
-              <p className="mt-3 text-xs text-[#b9e8c0]">
-                Practice one character first, then continue to the full word.
-              </p>
             </div>
 
-            <div className="rounded-3xl border-2 border-[#2f7a42] bg-[#184f2b] p-4 text-[#ecf9db] sm:p-6">
-              <div className="relative mb-3 h-[34rem] w-full overflow-hidden rounded-2xl border-2 border-[#3c8d52] bg-[#0f3f22]">
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-4">
-                  <span className="select-none text-7xl font-extrabold tracking-wide text-[#2c7c40]/70 sm:text-8xl">
-                    {currentLesson.thaiWord}
-                  </span>
+            {/* Canvas + stroke guide */}
+            <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
+              {/* Drawing canvas card */}
+              <div className="overflow-hidden rounded-3xl border-2 border-[#d7f4c9] bg-white">
+                <div className="relative aspect-square w-full">
+                  {/* Guideline grid */}
+                  <div className="pointer-events-none absolute inset-0">
+                    <div className="absolute inset-x-0 top-1/2 h-px bg-[#d7f4c9]" />
+                    <div className="absolute inset-y-0 left-1/2 w-px bg-[#d7f4c9]" />
+                    <div className="absolute inset-x-0 top-1/4 h-px bg-[#edfbe1]" />
+                    <div className="absolute inset-x-0 top-3/4 h-px bg-[#edfbe1]" />
+                    <div className="absolute inset-y-0 left-1/4 w-px bg-[#edfbe1]" />
+                    <div className="absolute inset-y-0 left-3/4 w-px bg-[#edfbe1]" />
+                  </div>
+                  {/* Ghost character */}
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                    <span
+                      className="select-none font-extrabold leading-none text-[#2c5015]/10"
+                      style={{ fontSize: "clamp(80px, 38%, 180px)" }}
+                    >
+                      {currentLesson.thaiWord}
+                    </span>
+                  </div>
+                  <canvas
+                    ref={canvasRef}
+                    onPointerDown={beginDrawing}
+                    onPointerMove={draw}
+                    onPointerUp={stopDrawing}
+                    onPointerLeave={stopDrawing}
+                    className="absolute inset-0 h-full w-full touch-none"
+                  />
                 </div>
-                <canvas
-                  ref={canvasRef}
-                  onPointerDown={beginDrawing}
-                  onPointerMove={draw}
-                  onPointerUp={stopDrawing}
-                  onPointerLeave={stopDrawing}
-                  className="absolute inset-0 h-full w-full touch-none"
-                />
+
+                {/* Result / hint bar below canvas */}
+                {writingResult ? (
+                  <div
+                    className={`flex items-center justify-between gap-3 border-t px-5 py-3 ${
+                      writingResult.passed
+                        ? "border-[#bbf7d0] bg-[#f0fdf4]"
+                        : "border-[#fed7aa] bg-[#fff7ed]"
+                    }`}
+                  >
+                    <div>
+                      <p className={`text-sm font-extrabold ${writingResult.passed ? "text-[#16a34a]" : "text-[#d97706]"}`}>
+                        {writingResult.passed ? "Good shape!" : "Keep practicing"}
+                      </p>
+                      <p className="text-xs text-neutral-400">
+                        Score {Math.round(writingResult.score * 100)}% · Coverage {Math.round(writingResult.coverage * 100)}% · Precision {Math.round(writingResult.precision * 100)}%
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={clearCanvas}
+                        className="rounded-full border border-neutral-200 bg-white px-4 py-1.5 text-xs font-bold text-neutral-600 hover:bg-neutral-50"
+                      >
+                        Try Again
+                      </button>
+                      {writingResult.passed && (
+                        <button
+                          onClick={handleNextWord}
+                          disabled={currentIndex + 1 >= lessons.length}
+                          className="duo-btn-primary px-4 py-1.5 text-xs disabled:opacity-50"
+                        >
+                          Next Word →
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between border-t border-[#e8f9db] bg-[#fbfffa] px-5 py-3">
+                    <p className="text-xs text-neutral-400">
+                      {isDrawing ? "Drawing…" : "Trace the character — result appears when you lift your pen"}
+                    </p>
+                    <button
+                      onClick={clearCanvas}
+                      disabled={!hasInk}
+                      className="rounded-full border border-neutral-200 bg-white px-4 py-1.5 text-xs font-bold text-neutral-500 hover:bg-neutral-50 disabled:opacity-40"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
               </div>
 
-              <div className="mb-2 flex flex-wrap items-center gap-2">
-                <button
-                  onClick={clearCanvas}
-                  className="rounded-full border border-[#3f9155] bg-[#0f3f22] px-3 py-1.5 text-xs font-bold text-[#d7f8cd]"
-                >
-                  Clear
-                </button>
-                <button
-                  onClick={checkWriting}
-                  disabled={!hasInk}
-                  className="rounded-full border border-[#97de9f] bg-[#c6f7b8] px-3 py-1.5 text-xs font-extrabold text-[#1a582d] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Check Readability
-                </button>
-              </div>
-
-              {writingResult ? (
-                <div
-                  className={`rounded-xl border px-3 py-2 text-xs ${
-                    writingResult.passed
-                      ? "border-[#8fe1a0] bg-[#0f5b2d] text-[#ddffe7]"
-                      : "border-[#f1c37d] bg-[#6d4a1f] text-[#fff4db]"
-                  }`}
-                >
-                  <p className="font-extrabold">
-                    {writingResult.passed
-                      ? "Readable enough for another person."
-                      : "Not clear yet. Follow stroke order and reduce extra lines."}
-                  </p>
-                  <p className="mt-1">
-                    Score: {Math.round(writingResult.score * 100)}% • Coverage: {Math.round(writingResult.coverage * 100)}% • Precision: {Math.round(writingResult.precision * 100)}% • Legibility: {Math.round(writingResult.legibility * 100)}%
-                  </p>
-                </div>
-              ) : (
-                <p className="text-xs text-[#b9e8c0]">
-                  We estimate comprehensibility from shape overlap and writing density.
+              {/* Stroke guide sidebar */}
+              <div className="rounded-3xl border border-[#d7f4c9] bg-[#f8fff4] p-4">
+                <p className="mb-3 text-xs font-extrabold uppercase tracking-widest text-[#7f9f69]">
+                  Stroke Order
                 </p>
-              )}
+                {/* Large character display */}
+                <div className="mb-4 flex items-center justify-center rounded-2xl bg-white py-5 shadow-sm">
+                  <span className="text-7xl font-extrabold text-[#2c5015]">{selectedCharacter}</span>
+                </div>
+                {/* Numbered stroke steps — tap to jump */}
+                <div className="space-y-2">
+                  {strokeSteps.map((step, index) => (
+                    <button
+                      key={step}
+                      onClick={() => setStrokeStepIndex(index)}
+                      className={`flex w-full items-start gap-2.5 rounded-xl px-3 py-2.5 text-left text-xs transition-colors ${
+                        index === strokeStepIndex
+                          ? "bg-[#58cc02] text-white"
+                          : index < strokeStepIndex
+                          ? "bg-[#e9fdd6] text-[#2c5015]"
+                          : "border border-neutral-100 bg-white text-neutral-400"
+                      }`}
+                    >
+                      <span className="shrink-0 font-extrabold">{index + 1}.</span>
+                      <span className={index === strokeStepIndex ? "font-bold" : ""}>{step}</span>
+                    </button>
+                  ))}
+                </div>
+                {/* Step navigation */}
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <button
+                    onClick={moveToPrevStrokeStep}
+                    disabled={strokeStepIndex === 0}
+                    className="rounded-xl border border-[#d7f4c9] bg-white px-3 py-2 text-xs font-bold text-[#4d6b3a] disabled:opacity-40"
+                  >
+                    ← Prev
+                  </button>
+                  <button
+                    onClick={moveToNextStrokeStep}
+                    disabled={!hasInk || strokeStepIndex >= strokeSteps.length - 1}
+                    className="rounded-xl bg-[#58cc02] px-3 py-2 text-xs font-extrabold text-white disabled:opacity-40"
+                  >
+                    Next →
+                  </button>
+                </div>
+                <p className="mt-3 text-xs text-[#8aad73]">
+                  Tap a step to jump to it. Draw each stroke then advance.
+                </p>
+              </div>
             </div>
           </div>
         ) : null}
