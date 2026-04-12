@@ -337,6 +337,12 @@ export default function ChapterPracticePage() {
             >
               Back to Level Chapters
             </button>
+            <button
+              onClick={() => router.push("/dashboard")}
+              className="w-full px-4 py-2 text-xs font-bold text-[#5a7c45] hover:text-[#2c5015]"
+            >
+              ← Back to Dashboard
+            </button>
           </div>
         </div>
       </div>
