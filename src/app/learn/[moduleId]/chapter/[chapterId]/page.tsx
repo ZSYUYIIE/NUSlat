@@ -150,6 +150,7 @@ export default function ChapterPracticePage() {
   const beginDrawing = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const ctx = canvasRef.current?.getContext("2d");
     if (!ctx) return;
+    hasInkRef.current = false;
     const point = getCanvasPoint(event);
     ctx.beginPath();
     ctx.moveTo(point.x, point.y);
