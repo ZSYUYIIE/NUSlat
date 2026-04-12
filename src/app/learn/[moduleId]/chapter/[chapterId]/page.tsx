@@ -521,7 +521,7 @@ export default function ChapterPracticePage() {
                   <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                     <span
                       className="select-none font-extrabold leading-none text-[#2c5015]/10"
-                      style={{ fontSize: "clamp(80px, 38%, 180px)" }}
+                      style={{ fontSize: "clamp(80px, 18vmin, 180px)" }}
                     >
                       {currentLesson.thaiWord}
                     </span>
@@ -578,8 +578,7 @@ export default function ChapterPracticePage() {
                     </p>
                     <button
                       onClick={clearCanvas}
-                      disabled={!hasInk}
-                      className="rounded-full border border-neutral-200 bg-white px-4 py-1.5 text-xs font-bold text-neutral-500 hover:bg-neutral-50 disabled:opacity-40"
+                      className="rounded-full border border-neutral-200 bg-white px-4 py-1.5 text-xs font-bold text-neutral-500 hover:bg-neutral-50"
                     >
                       Clear
                     </button>
