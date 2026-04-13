@@ -6,6 +6,7 @@ import AppHeader from "@/components/AppHeader";
 import { MODULES } from "@/lib/modules";
 import { getChaptersByModule } from "@/data/chapters";
 import { playThaiAudio } from "@/lib/audio";
+import WriteModal from "@/components/WriteModal";
 
 export default function VocabularyClient() {
   const searchParams = useSearchParams();
@@ -16,6 +17,7 @@ export default function VocabularyClient() {
   const [chapterFilter, setChapterFilter] = useState<string>(queryChapterOrder);
   const [isSpeakingWord, setIsSpeakingWord] = useState<string | null>(null);
   const [flippedCards, setFlippedCards] = useState<Record<string, boolean>>({});
+  const [writingWord, setWritingWord] = useState<{ thaiWord: string; phonetic: string; meaning: string } | null>(null);
 
   const chapterOptions = useMemo(() => {
     const scopedLevels =
@@ -63,6 +65,15 @@ export default function VocabularyClient() {
   };
 
   return (
+    <>
+    {writingWord && (
+      <WriteModal
+        thaiWord={writingWord.thaiWord}
+        phonetic={writingWord.phonetic}
+        meaning={writingWord.meaning}
+        onClose={() => setWritingWord(null)}
+      />
+    )}
     <div className="duo-shell min-h-screen">
       <AppHeader />
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
@@ -149,16 +160,25 @@ export default function VocabularyClient() {
                 </div>
               )}
 
-              <button
-                onClick={() => speakThai(word.thaiWord)}
-                className="duo-btn-secondary mt-3 px-3 py-1.5 text-xs"
-              >
-                {isSpeakingWord === word.thaiWord ? "Playing..." : "Listen"}
-              </button>
+              <div className="mt-3 flex gap-2">
+                <button
+                  onClick={() => speakThai(word.thaiWord)}
+                  className="duo-btn-secondary px-3 py-1.5 text-xs"
+                >
+                  {isSpeakingWord === word.thaiWord ? "Playing..." : "Listen"}
+                </button>
+                <button
+                  onClick={() => setWritingWord({ thaiWord: word.thaiWord, phonetic: word.phonetic, meaning: word.meaning })}
+                  className="duo-btn-secondary px-3 py-1.5 text-xs"
+                >
+                  Write
+                </button>
+              </div>
             </div>
           ))}
         </div>
       </main>
     </div>
+    </>
   );
 }
