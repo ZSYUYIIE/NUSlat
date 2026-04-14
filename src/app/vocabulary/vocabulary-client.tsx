@@ -68,6 +68,7 @@ export default function VocabularyClient() {
     <>
     {writingWord && (
       <WriteModal
+        key={writingWord.thaiWord}
         thaiWord={writingWord.thaiWord}
         phonetic={writingWord.phonetic}
         meaning={writingWord.meaning}
