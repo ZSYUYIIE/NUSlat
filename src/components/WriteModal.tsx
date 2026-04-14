@@ -70,7 +70,9 @@ export default function WriteModal({ thaiWord, phonetic, meaning, onClose }: Pro
     const p = getCanvasPoint(event);
     ctx.lineTo(p.x, p.y);
     ctx.stroke();
-    setHasInk(true);
+    if (!hasInk) {
+      setHasInk(true);
+    }
   };
 
   const stopDrawing = (event: React.PointerEvent<HTMLCanvasElement>) => {
