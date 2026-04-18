@@ -1,21 +1,7 @@
 "use client";
 
-import { useRef, useState, useEffect, useCallback } from "react";
-
-const WRITING_THRESHOLDS = {
-  coverage: 0.24,
-  precision: 0.20,
-  legibility: 0.45,
-  score: 0.32,
-} as const;
-
-interface WritingResult {
-  score: number;
-  coverage: number;
-  precision: number;
-  legibility: number;
-  passed: boolean;
-}
+import { useRef, useState, useEffect, useCallback, useId } from "react";
+import { evaluateWritingCanvas, type WritingResult } from "@/lib/writing-evaluator";
 
 interface Props {
   thaiWord: string;
@@ -26,6 +12,9 @@ interface Props {
 
 export default function WriteModal({ thaiWord, phonetic, meaning, onClose }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const modalRef = useRef<HTMLDivElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const titleId = useId();
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasInk, setHasInk] = useState(false);
   const [writingResult, setWritingResult] = useState<WritingResult | null>(null);
@@ -93,57 +82,14 @@ export default function WriteModal({ thaiWord, phonetic, meaning, onClose }: Pro
 
   const checkWriting = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !hasInk) {
-      setWritingResult({ score: 0, coverage: 0, precision: 0, legibility: 0, passed: false });
-      return;
-    }
-    const userCtx = canvas.getContext("2d");
-    if (!userCtx) return;
-
-    const width = canvas.width;
-    const height = canvas.height;
-    const userData = userCtx.getImageData(0, 0, width, height).data;
-
-    const templateCanvas = document.createElement("canvas");
-    templateCanvas.width = width;
-    templateCanvas.height = height;
-    const templateCtx = templateCanvas.getContext("2d");
-    if (!templateCtx) return;
-
-    const ratio = window.devicePixelRatio || 1;
-    const lw = width / ratio;
-    const lh = height / ratio;
-    templateCtx.scale(ratio, ratio);
-    templateCtx.clearRect(0, 0, lw, lh);
-    templateCtx.fillStyle = "#0b2f18";
-    templateCtx.textAlign = "center";
-    templateCtx.textBaseline = "middle";
-    const fontSize = Math.min(lw / (thaiWord.length * 0.9 + 0.2), lh * 0.52);
-    templateCtx.font = `700 ${fontSize}px "Noto Sans Thai", "Sarabun", sans-serif`;
-    templateCtx.fillText(thaiWord, lw / 2, lh / 2);
-    const templateData = templateCtx.getImageData(0, 0, width, height).data;
-
-    let targetPixels = 0, userPixels = 0, overlapPixels = 0;
-    for (let i = 3; i < userData.length; i += 4) {
-      const userInk = userData[i] > 24;
-      const targetInk = templateData[i] > 24;
-      if (targetInk) targetPixels++;
-      if (userInk) userPixels++;
-      if (userInk && targetInk) overlapPixels++;
-    }
-
-    const coverage = targetPixels > 0 ? overlapPixels / targetPixels : 0;
-    const precision = userPixels > 0 ? overlapPixels / userPixels : 0;
-    const density = targetPixels > 0 ? userPixels / targetPixels : 0;
-    const legibility = Math.max(0, 1 - Math.abs(1 - density));
-    const score = coverage * 0.64 + precision * 0.26 + legibility * 0.10;
-    const passed =
-      coverage >= WRITING_THRESHOLDS.coverage &&
-      precision >= WRITING_THRESHOLDS.precision &&
-      legibility >= WRITING_THRESHOLDS.legibility &&
-      score >= WRITING_THRESHOLDS.score;
-
-    setWritingResult({ score, coverage, precision, legibility, passed });
+    if (!canvas) return;
+    setWritingResult(
+      evaluateWritingCanvas({
+        canvas,
+        hasInk,
+        targetText: thaiWord,
+      })
+    );
   }, [hasInk, thaiWord]);
 
   // Close on backdrop click
@@ -151,13 +97,47 @@ export default function WriteModal({ thaiWord, phonetic, meaning, onClose }: Pro
     if (event.target === event.currentTarget) onClose();
   };
 
-  // Close on Escape key
+  // Close on Escape key + focus management
   useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeButtonRef.current?.focus();
+
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
+
+      if (e.key !== "Tab") return;
+      const modal = modalRef.current;
+      if (!modal) return;
+
+      const focusables = Array.from(
+        modal.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        )
+      );
+      if (focusables.length === 0) {
+        e.preventDefault();
+        return;
+      }
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
+
     document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.removeEventListener("keydown", handleKey);
+      previouslyFocused?.focus();
+    };
   }, [onClose]);
 
   return (
@@ -166,11 +146,17 @@ export default function WriteModal({ thaiWord, phonetic, meaning, onClose }: Pro
       style={{ backdropFilter: "blur(6px)", backgroundColor: "rgba(0,0,0,0.45)" }}
       onClick={handleBackdropClick}
     >
-      <div className="w-full max-w-2xl overflow-hidden rounded-3xl shadow-2xl">
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="w-full max-w-2xl overflow-hidden rounded-3xl shadow-2xl"
+      >
         {/* Modal header */}
         <div className="flex items-center justify-between gap-3 border-b border-[#d7f4c9] bg-white px-5 py-4">
           <div>
-            <h2 className="text-sm font-extrabold tracking-tight text-[#2c5015]">
+            <h2 id={titleId} className="text-sm font-extrabold tracking-tight text-[#2c5015]">
               Practice Writing
             </h2>
             <p className="mt-0.5 text-xs text-[#6a8a55]">
@@ -180,6 +166,7 @@ export default function WriteModal({ thaiWord, phonetic, meaning, onClose }: Pro
             </p>
           </div>
           <button
+            ref={closeButtonRef}
             onClick={onClose}
             className="rounded-full p-1.5 text-[#6a8a55] hover:bg-[#f0fce8] hover:text-[#2c5015]"
             aria-label="Close"

@@ -10,25 +10,11 @@ import {
   getCompletedChapterCountByModule,
 } from "@/lib/modules";
 import { getCharacterStrokeGuide } from "@/lib/strokes";
+import { evaluateWritingCanvas, type WritingResult } from "@/lib/writing-evaluator";
 import ModuleCard from "@/components/ModuleCard";
 import { useMilestones } from "@/hooks/useMilestones";
 
 const SPOTLIGHT_CHARACTER = "ส";
-
-const WRITING_THRESHOLDS = {
-  coverage: 0.24,
-  precision: 0.20,
-  legibility: 0.45,
-  score: 0.32,
-} as const;
-
-interface WritingResult {
-  score: number;
-  coverage: number;
-  precision: number;
-  legibility: number;
-  passed: boolean;
-}
 
 export default function Dashboard() {
   const { data: session } = useSession();
@@ -119,57 +105,16 @@ export default function Dashboard() {
 
   const checkWriting = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !hasInk) {
-      setWritingResult({ score: 0, coverage: 0, precision: 0, legibility: 0, passed: false });
-      return;
-    }
-    const userCtx = canvas.getContext("2d");
-    if (!userCtx) return;
-
-    const width = canvas.width;
-    const height = canvas.height;
-    const userData = userCtx.getImageData(0, 0, width, height).data;
-
-    const templateCanvas = document.createElement("canvas");
-    templateCanvas.width = width;
-    templateCanvas.height = height;
-    const templateCtx = templateCanvas.getContext("2d");
-    if (!templateCtx) return;
-
-    const ratio = window.devicePixelRatio || 1;
-    const lw = width / ratio;
-    const lh = height / ratio;
-    templateCtx.scale(ratio, ratio);
-    templateCtx.clearRect(0, 0, lw, lh);
-    templateCtx.fillStyle = "#0b2f18";
-    templateCtx.textAlign = "center";
-    templateCtx.textBaseline = "middle";
-    const fontSize = Math.min(lw / 2.4, lh * 0.52);
-    templateCtx.font = `700 ${fontSize}px "Noto Sans Thai", "Sarabun", sans-serif`;
-    templateCtx.fillText(SPOTLIGHT_CHARACTER, lw / 2, lh / 2);
-    const templateData = templateCtx.getImageData(0, 0, width, height).data;
-
-    let targetPixels = 0, userPixels = 0, overlapPixels = 0;
-    for (let i = 3; i < userData.length; i += 4) {
-      const userInk = userData[i] > 24;
-      const targetInk = templateData[i] > 24;
-      if (targetInk) targetPixels++;
-      if (userInk) userPixels++;
-      if (userInk && targetInk) overlapPixels++;
-    }
-
-    const coverage = targetPixels > 0 ? overlapPixels / targetPixels : 0;
-    const precision = userPixels > 0 ? overlapPixels / userPixels : 0;
-    const density = targetPixels > 0 ? userPixels / targetPixels : 0;
-    const legibility = Math.max(0, 1 - Math.abs(1 - density));
-    const score = coverage * 0.64 + precision * 0.26 + legibility * 0.10;
-    const passed =
-      coverage >= WRITING_THRESHOLDS.coverage &&
-      precision >= WRITING_THRESHOLDS.precision &&
-      legibility >= WRITING_THRESHOLDS.legibility &&
-      score >= WRITING_THRESHOLDS.score;
-
-    setWritingResult({ score, coverage, precision, legibility, passed });
+    if (!canvas) return;
+    setWritingResult(
+      evaluateWritingCanvas({
+        canvas,
+        hasInk,
+        targetText: SPOTLIGHT_CHARACTER,
+        getFontSizePx: (logicalWidth, logicalHeight) =>
+          Math.min(logicalWidth / 2.4, logicalHeight * 0.52),
+      })
+    );
   }, [hasInk]);
 
   const getModuleStatus = (moduleId: string, index: number) => {
