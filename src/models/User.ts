@@ -9,6 +9,9 @@ export interface IUser extends Document {
   emailVerifiedAt?: Date;
   emailVerificationToken?: string;
   emailVerificationExpires?: Date;
+  dailyNotificationOptIn: boolean;
+  dailyNotificationOptInUpdatedAt?: Date;
+  lastDailyReminderSentAt?: Date;
   completedMilestones: string[];
   completedChapters: string[];
   createdAt: Date;
@@ -50,6 +53,16 @@ const UserSchema: Schema<IUser> = new Schema(
     emailVerificationExpires: {
       type: Date,
       select: false,
+    },
+    dailyNotificationOptIn: {
+      type: Boolean,
+      default: false,
+    },
+    dailyNotificationOptInUpdatedAt: {
+      type: Date,
+    },
+    lastDailyReminderSentAt: {
+      type: Date,
     },
     completedMilestones: {
       type: [String],

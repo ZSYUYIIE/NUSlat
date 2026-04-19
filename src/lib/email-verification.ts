@@ -44,8 +44,12 @@ function getBaseUrl() {
   return url;
 }
 
+function buildAppUrl(pathname: string) {
+  return new URL(pathname, getBaseUrl()).toString();
+}
+
 function buildVerificationUrl(email: string, plainToken: string) {
-  const url = new URL("/auth/verify-email", getBaseUrl());
+  const url = new URL(buildAppUrl("/auth/verify-email"));
   url.searchParams.set("email", email);
   url.searchParams.set("token", plainToken);
   return url.toString();
@@ -112,5 +116,75 @@ export async function sendVerificationEmail(params: {
   } catch (error) {
     console.error("Failed to send verification email:", error);
     return { sent: false, verificationUrl };
+  }
+}
+
+export async function sendDailyReminderEmail(params: {
+  to: string;
+  name?: string;
+}) {
+  const { to, name } = params;
+
+  const host = process.env.SMTP_HOST;
+  const port = Number(process.env.SMTP_PORT || "587");
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  const from = process.env.SMTP_FROM || "NUSlat <no-reply@nuslat.local>";
+
+  if (!isEmailVerificationConfigured() || !host || !user || !pass) {
+    console.warn(
+      "SMTP not configured. Daily reminder email not sent for:",
+      to
+    );
+    return { sent: false };
+  }
+
+  const transporter = nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: {
+      user,
+      pass,
+    },
+  });
+
+  const safeName = (name || "there").trim();
+  const quizUrl = buildAppUrl("/dashboard");
+  const homeUrl = buildAppUrl("/");
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1D1D1F; line-height: 1.6;">
+      <h2 style="margin-bottom: 8px;">Keep your NUSlat streak going</h2>
+      <p>Hi ${safeName},</p>
+      <p>Do today&apos;s quiz to earn your daily points and keep your momentum.</p>
+      <p style="margin: 24px 0;">
+        <a href="${quizUrl}" style="background:#58cc02;color:#fff;text-decoration:none;padding:12px 18px;border-radius:12px;display:inline-block;font-weight:700;">Start Quiz</a>
+      </p>
+      <p><strong>Coming soon:</strong> Learn mode and Daily Quiz will also count toward your daily points.</p>
+      <p>You can opt in or out of these reminders anytime from home page preferences.</p>
+      <p style="margin-top:16px;">
+        <a href="${homeUrl}" style="color:#2c5015;">Manage reminder preferences</a>
+      </p>
+    </div>
+  `;
+
+  try {
+    await transporter.sendMail({
+      from,
+      to,
+      subject: "Daily reminder: keep your NUSlat points streak",
+      html,
+      text:
+        `Hi ${safeName},\n\n` +
+        `Do today's quiz to earn your daily points: ${quizUrl}\n\n` +
+        `Learn mode and Daily Quiz reminders are coming soon.\n` +
+        `Manage reminder preferences: ${homeUrl}`,
+    });
+
+    return { sent: true };
+  } catch (error) {
+    console.error("Failed to send daily reminder email:", error);
+    return { sent: false };
   }
 }

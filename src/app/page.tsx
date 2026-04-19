@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { auth } from "@/auth";
-import HomeNewsletter from "@/components/HomeNewsletter";
+import HomeDailyNotification from "@/components/HomeDailyNotification";
 import AppHeader from "@/components/AppHeader";
 
 export default async function Home() {
@@ -143,7 +143,7 @@ export default async function Home() {
               <li><strong>Office Hours:</strong> Mon-Fri, 9:00-18:00 ICT</li>
             </ul>
           </div>
-          <HomeNewsletter />
+          <HomeDailyNotification isSignedIn={Boolean(session?.user)} />
         </section>
       </main>
 

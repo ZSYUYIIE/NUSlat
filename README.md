@@ -8,6 +8,7 @@ A gamified, Duolingo-style vocabulary learning app built with Next.js, React, Ta
 - 🔒 **Progressive Unlocking** – Module 2k unlocks only after completing 1k; 3k unlocks after 2k
 - 🔐 **Authentication** – Sign in with Google OAuth or Email/Password via NextAuth.js v5
 - ✉️ **Email Verification** – Credentials users must verify email before first sign-in
+- 📬 **Daily Email Reminders** – Opt in/out to daily quiz reminder emails (Duolingo-style streak nudge)
 - 🏆 **XP System** – Earn XP points as you complete modules
 - 🔊 **Listen with Google TTS** – Thai word audio is served through a server-side TTS endpoint
 - 🗂️ **MongoDB Vocabulary Backend** – Vocabulary cards can be loaded from MongoDB by level/chapter filters
@@ -50,6 +51,7 @@ Required variables:
 - `GOOGLE_TTS_API_KEY` – Optional, enables official Google Cloud Text-to-Speech synthesis for Listen buttons
 - `VOCAB_ADMIN_TOKEN` – Required to import/replace vocabulary entries via `POST /api/vocabulary`
 - `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` – For email verification delivery
+- `DAILY_NOTIFICATION_CRON_TOKEN` (or `CRON_SECRET` on Vercel) – Protects `/api/notifications/daily` reminder dispatch route
 
 ### 3. Run the development server
 
@@ -78,6 +80,9 @@ src/
 │   │   ├── auth/
 │   │   │   ├── [...nextauth]/route.ts   # NextAuth handlers
 │   │   │   └── register/route.ts        # User registration
+│   │   ├── notifications/
+│   │   │   ├── daily/route.ts           # Daily reminder email dispatch (cron)
+│   │   │   └── preferences/route.ts     # User opt-in/out preferences
 │   │   └── milestones/route.ts          # GET/POST milestone progress
 │   ├── auth/
 │   │   ├── signin/page.tsx              # Sign in page
@@ -87,6 +92,7 @@ src/
 ├── auth.ts                              # NextAuth configuration
 ├── components/
 │   ├── Dashboard.tsx                    # Gamified dashboard component
+│   ├── HomeDailyNotification.tsx        # Daily reminder opt-in card on home page
 │   └── ModuleCard.tsx                   # Module card with lock logic
 ├── lib/
 │   ├── db.ts                            # MongoDB connection utility
@@ -107,9 +113,19 @@ src/
 | `POST` | `/api/auth/resend-verification` | Resend verification link |
 | `GET` | `/api/milestones` | Get current user's completed milestones |
 | `POST` | `/api/milestones` | Mark a milestone as completed |
+| `GET/POST` | `/api/notifications/preferences` | Get or update daily email reminder opt-in |
+| `GET/POST` | `/api/notifications/daily` | Trigger daily reminder email dispatch (protected by cron token) |
 | `GET` | `/api/vocabulary` | Get vocabulary from MongoDB (filter by `moduleId`, `chapterId`, `chapterOrder`) |
 | `POST` | `/api/vocabulary` | Secure upsert import (`x-vocab-admin-token` header, optional `replaceChapters`) |
 | `GET` | `/api/tts/google` | Generate playable MP3 for Listen buttons (`text`, optional `lang`) |
+
+## Daily Reminder Cron
+
+If you deploy on Vercel, `vercel.json` includes a daily cron that calls `/api/notifications/daily`.
+
+- Set `CRON_SECRET` in Vercel project settings, or set `DAILY_NOTIFICATION_CRON_TOKEN`.
+- The route accepts either `Authorization: Bearer <token>` or `x-daily-notification-token`.
+- Users only receive one reminder per UTC day, and only when opted in.
 
 ## Deploy on Vercel
 
