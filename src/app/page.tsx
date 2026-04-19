@@ -133,23 +133,90 @@ export default async function Home() {
           </div>
         </section>
 
-        <section className="mt-12 grid w-full max-w-5xl gap-4 text-left sm:grid-cols-2">
-          <div className="duo-card p-6">
-            <h3 className="text-xl font-extrabold text-[#2c5015]">Contact</h3>
-            <p className="mt-2 text-sm text-[#4d6b3a]">Need support, bug fixes, or chapter updates? Reach out anytime.</p>
-            <ul className="mt-4 space-y-2 text-sm text-[#4d6b3a]">
-              <li><strong>Email:</strong> support@nuslat.app</li>
-              <li><strong>WhatsApp:</strong> +66 90 000 0000</li>
-              <li><strong>Office Hours:</strong> Mon-Fri, 9:00-18:00 ICT</li>
-            </ul>
-          </div>
+        <section className="mt-12 w-full max-w-5xl text-left">
           <HomeDailyNotification isSignedIn={Boolean(session?.user)} />
         </section>
-      </main>
 
-      <footer className="border-t-2 border-[#d7f4c9] py-6 text-center text-xs text-[#7f9f69]">
-        <p>© 2024 NUSlat · Built for learners everywhere 🌍</p>
-      </footer>
+        <section className="mt-8 w-full max-w-5xl text-left">
+          <div className="duo-card p-6">
+            <h3 className="text-xl font-extrabold text-[#2c5015]">Connect</h3>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <a
+                href="https://www.linkedin.com/in/zuyi-li-ba692b327/"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-3 rounded-xl border border-[#d7f4c9] bg-white px-3 py-3 text-left text-sm font-bold text-[#2c5015]"
+              >
+                <Image
+                  src="/linkedin.png"
+                  alt="LinkedIn logo"
+                  width={24}
+                  height={24}
+                  className="h-6 w-6"
+                />
+                <span className="break-all">https://www.linkedin.com/in/zuyi-li-ba692b327/</span>
+              </a>
+
+              <a
+                href="https://t.me/dotiiee"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-3 rounded-xl border border-[#d7f4c9] bg-white px-3 py-3 text-left text-sm font-bold text-[#2c5015]"
+              >
+                <Image
+                  src="/telegram.png"
+                  alt="Telegram logo"
+                  width={24}
+                  height={24}
+                  className="h-6 w-6"
+                />
+                <span>Telegram: @dotiiee</span>
+              </a>
+
+              <div className="flex items-center gap-3 rounded-xl border border-[#d7f4c9] bg-white px-3 py-3 text-left text-sm font-bold text-[#2c5015]">
+                <Image
+                  src="/wechat.png"
+                  alt="WeChat logo"
+                  width={24}
+                  height={24}
+                  className="h-6 w-6"
+                />
+                <span>WeChat: zuyi0605</span>
+              </div>
+
+              <a
+                href="https://wa.me/6584898001"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-3 rounded-xl border border-[#d7f4c9] bg-white px-3 py-3 text-left text-sm font-bold text-[#2c5015]"
+              >
+                <Image
+                  src="/whatsapp.png"
+                  alt="WhatsApp logo"
+                  width={24}
+                  height={24}
+                  className="h-6 w-6"
+                />
+                <span>WhatsApp: +65 84898001</span>
+              </a>
+
+              <a
+                href="mailto:dr.dotiiee@gmail.com"
+                className="flex items-center gap-3 rounded-xl border border-[#d7f4c9] bg-white px-3 py-3 text-left text-sm font-bold text-[#2c5015]"
+              >
+                <Image
+                  src="/gmail.png"
+                  alt="Gmail logo"
+                  width={24}
+                  height={24}
+                  className="h-6 w-6"
+                />
+                <span className="break-all">Gmail: dr.dotiiee@gmail.com</span>
+              </a>
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }
