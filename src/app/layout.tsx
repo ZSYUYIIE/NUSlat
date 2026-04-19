@@ -12,6 +12,11 @@ export const metadata: Metadata = {
   title: "NUSlat – Vocabulary Learning",
   description:
     "A gamified vocabulary learning app. Master 1k, 2k, and 3k words step by step.",
+  icons: {
+    icon: "/Logo.png",
+    shortcut: "/Logo.png",
+    apple: "/Logo.png",
+  },
 };
 
 export default function RootLayout({

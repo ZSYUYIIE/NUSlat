@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { getProviders, signIn } from "next-auth/react";
 import Link from "next/link";
@@ -144,7 +145,14 @@ export default function SignInClient() {
         </div>
         <div className="mb-8 text-center">
           <div className="mb-3 flex justify-center">
-            <span className="text-5xl">🦜</span>
+            <Image
+              src="/Logo.png"
+              alt="NUSlat logo"
+              width={72}
+              height={72}
+              className="h-16 w-16 rounded-xl object-contain"
+              priority
+            />
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-[#2c5015]">
             NUSlat

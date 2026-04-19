@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { auth } from "@/auth";
 import HomeNewsletter from "@/components/HomeNewsletter";
@@ -14,7 +15,16 @@ export default async function Home() {
         <div className="mb-4 inline-flex items-center rounded-full border-2 border-[#d7f4c9] bg-white px-4 py-1 text-xs font-extrabold uppercase tracking-wider text-[#46a302]">
           Build Thai Daily
         </div>
-        <div className="mb-6 text-7xl">🦜</div>
+        <div className="mb-6">
+          <Image
+            src="/Logo.png"
+            alt="NUSlat logo"
+            width={120}
+            height={120}
+            className="mx-auto h-24 w-24 rounded-2xl object-contain sm:h-28 sm:w-28"
+            priority
+          />
+        </div>
         <h1 className="max-w-2xl text-4xl font-extrabold leading-tight tracking-tight text-[#2c5015] sm:text-5xl lg:text-6xl">
           Learn vocabulary
           <br />

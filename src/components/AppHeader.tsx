@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
@@ -28,7 +29,14 @@ export default function AppHeader() {
     <header className="sticky top-0 z-30 border-b-2 border-[#d7f4c9] bg-[#f6ffef]/95 backdrop-blur-sm">
       <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <Link href="/" className="flex items-center gap-2">
-          <span className="text-xl">🦜</span>
+          <Image
+            src="/Logo.png"
+            alt="NUSlat logo"
+            width={30}
+            height={30}
+            className="h-7 w-7 rounded-md object-contain"
+            priority
+          />
           <span className="text-base font-extrabold tracking-tight text-[#2c5015] sm:text-lg">NUSlat</span>
         </Link>
 
