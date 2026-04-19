@@ -37,7 +37,7 @@ export default function LearnPage() {
             The level <strong>{moduleId}</strong> does not exist.
           </p>
           <a href="/dashboard" className="duo-btn-primary px-6 py-2.5 text-sm">
-            Back to Dashboard
+            Back to Quiz
           </a>
         </div>
       </div>

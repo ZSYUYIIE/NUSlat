@@ -42,7 +42,7 @@ export default async function Home() {
                 href="/dashboard"
                 className="duo-btn-primary px-8 py-3.5 text-sm"
               >
-                Go to Dashboard →
+                Go to Quiz →
               </Link>
               <Link
                 href="/vocabulary"
@@ -118,7 +118,7 @@ export default async function Home() {
             <div className="duo-card p-5">
               <p className="text-xs font-extrabold uppercase tracking-wide text-[#7f9f69]">Step 1</p>
               <h3 className="mt-1 text-lg font-extrabold text-[#2c5015]">Choose Thai Level</h3>
-              <p className="mt-2 text-sm text-[#4d6b3a]">Open Dashboard, choose Thai Level 1/2/3, then select a chapter path.</p>
+              <p className="mt-2 text-sm text-[#4d6b3a]">Open Quiz, choose Thai Level 1/2/3, then select a chapter path.</p>
             </div>
             <div className="duo-card p-5">
               <p className="text-xs font-extrabold uppercase tracking-wide text-[#7f9f69]">Step 2</p>
@@ -128,7 +128,7 @@ export default async function Home() {
             <div className="duo-card p-5">
               <p className="text-xs font-extrabold uppercase tracking-wide text-[#7f9f69]">Step 3</p>
               <h3 className="mt-1 text-lg font-extrabold text-[#2c5015]">Track Progress</h3>
-              <p className="mt-2 text-sm text-[#4d6b3a]">Complete chapters in order and monitor your chapter milestones from the dashboard.</p>
+              <p className="mt-2 text-sm text-[#4d6b3a]">Complete chapters in order and monitor your chapter milestones from the quiz page.</p>
             </div>
           </div>
         </section>

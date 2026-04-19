@@ -581,7 +581,7 @@ export default function ChapterPracticePage() {
               onClick={() => router.push("/dashboard")}
               className="w-full px-4 py-2 text-xs font-bold text-[#5a7c45] hover:text-[#2c5015]"
             >
-              ← Back to Dashboard
+              ← Back to Quiz
             </button>
           </div>
         </div>

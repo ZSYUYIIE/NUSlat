@@ -42,7 +42,7 @@ export default function AppHeader() {
 
         <nav className="flex flex-wrap items-center gap-2">
           <NavItem href="/" label="Home" active={pathname === "/"} />
-          <NavItem href="/dashboard" label="Dashboard" active={pathname.startsWith("/dashboard")} />
+          <NavItem href="/dashboard" label="Quiz" active={pathname.startsWith("/dashboard")} />
           <NavItem href="/vocabulary" label="Vocabulary" active={pathname.startsWith("/vocabulary")} />
           <NavItem href="/account" label="Account" active={pathname.startsWith("/account")} />
         </nav>

@@ -6,31 +6,17 @@ import AppHeader from "@/components/AppHeader";
 import {
   MODULES,
   getChapterSequence,
-  getCompletedChapterCountByModule,
 } from "@/lib/modules";
 import ModuleCard from "@/components/ModuleCard";
 import { useMilestones } from "@/hooks/useMilestones";
 
 export default function Dashboard() {
   const { data: session } = useSession();
-  const { completedMilestones, error, clearError, loading, resetProgress } =
-    useMilestones();
+  const { completedMilestones, error, clearError, loading } = useMilestones();
 
   const isGuest = !session?.user;
   const userName = session?.user?.name?.split(" ")[0] ?? "Guest";
   const allChapterIds = getChapterSequence();
-
-  const totalXP = MODULES.reduce((sum, module) => {
-    const completedInModule = getCompletedChapterCountByModule(
-      module.id,
-      completedMilestones
-    );
-    const chapterXP = Math.floor(module.xp / module.chapters.length);
-    return sum + completedInModule * chapterXP;
-  }, 0);
-
-  const completedCount = completedMilestones.length;
-  const progressPct = Math.round((completedCount / allChapterIds.length) * 100);
 
   const getModuleStatus = (moduleId: string, index: number) => {
     const moduleData = MODULES.find((item) => item.id === moduleId);
@@ -78,72 +64,21 @@ export default function Dashboard() {
       )}
 
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
-        <div className="mb-4 flex w-full items-center gap-2.5">
-          <div className="duo-chip flex flex-1 items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-[#3f6f25] sm:flex-initial">
-            <span>🎯</span>
-            <span>
-              {completedCount}/{allChapterIds.length} chapters
-            </span>
-          </div>
-          <div className="duo-chip flex flex-1 items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-[#3f6f25] sm:flex-initial">
-            <span>⚡</span>
-            <span>{totalXP} XP</span>
-          </div>
-        </div>
-
         {/* Welcome */}
         <div className="mb-8 text-center sm:mb-10">
           <h1 className="text-2xl font-extrabold tracking-tight text-[#2c5015] sm:text-4xl">
             {isGuest ? "Welcome, Guest" : `Welcome back, ${userName}`}
           </h1>
           <p className="mt-2 text-sm text-[#4d6b3a] sm:text-base">
-            Continue your vocabulary journey
+            Pick a level and clear chapter quizzes to unlock the next one
           </p>
         </div>
 
         {/* Loading skeleton */}
         {loading && (
           <div className="duo-card mb-8 animate-pulse p-6">
-            <div className="mb-4 h-3 w-32 rounded-full bg-neutral-100" />
-            <div className="h-2 rounded-full bg-neutral-100" />
-          </div>
-        )}
-
-        {/* Progress card */}
-        {!loading && (
-          <div className="duo-card mb-8 p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <span className="text-sm font-bold tracking-tight text-[#2c5015]">
-                Overall Progress
-              </span>
-              <span className="text-sm font-extrabold text-[#2c5015]">
-                {progressPct}%
-              </span>
-            </div>
-            <div className="h-3 overflow-hidden rounded-full bg-[#e8f9db]">
-              <div
-                className="h-full rounded-full bg-[#58cc02] transition-all duration-700"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-            <div className="mt-3 flex justify-between text-xs font-bold text-[#87a66f]">
-              <span>Beginner</span>
-              <span>Advanced</span>
-            </div>
-            {completedCount > 0 && (
-              <div className="mt-4 flex justify-end">
-                <button
-                  onClick={() => {
-                    if (confirm("Reset all progress? This cannot be undone.")) {
-                      resetProgress();
-                    }
-                  }}
-                  className="text-xs font-semibold text-red-400 hover:text-red-600"
-                >
-                  Reset progress
-                </button>
-              </div>
-            )}
+            <div className="mb-4 h-3 w-40 rounded-full bg-neutral-100" />
+            <div className="h-2 w-full rounded-full bg-neutral-100" />
           </div>
         )}
 
@@ -174,10 +109,10 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Learning path */}
+        {/* Quiz levels */}
         <div className="space-y-3">
           <h2 className="text-xs font-extrabold uppercase tracking-widest text-[#87a66f]">
-            Learning Path
+            Quiz Levels
           </h2>
 
           <div>
@@ -217,10 +152,10 @@ export default function Dashboard() {
           <div className="duo-card mt-8 p-8 text-center">
             <div className="mb-3 text-4xl">🏆</div>
             <h3 className="text-xl font-extrabold tracking-tight text-[#2c5015]">
-              Course Complete
+              Quiz Journey Complete
             </h3>
             <p className="mt-2 text-sm text-[#4d6b3a]">
-              You&apos;ve mastered every chapter. Amazing work!
+              You&apos;ve cleared every chapter quiz. Amazing work!
             </p>
             {isGuest && (
               <Link

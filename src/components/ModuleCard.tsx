@@ -80,7 +80,7 @@ export default function ModuleCard({
                 d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
               />
             </svg>
-            <span className="text-xs font-medium tracking-wide">Complete previous module</span>
+            <span className="text-xs font-medium tracking-wide">Complete previous level quiz</span>
           </div>
         </div>
       )}
@@ -97,7 +97,7 @@ export default function ModuleCard({
             {module.title}
           </h3>
           <p className="text-sm text-[#5b7a46]">
-            {completedChapters}/{module.chapters.length} chapters complete
+            {completedChapters}/{module.chapters.length} quiz chapters cleared
           </p>
         </div>
       </div>
@@ -107,11 +107,11 @@ export default function ModuleCard({
         {module.description}
       </p>
 
-      {/* Footer: XP + action */}
+      {/* Footer: quiz info + action */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="duo-chip flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-[#3f6f25]">
-          <span>⚡</span>
-          <span>{module.xp} XP</span>
+          <span>🧩</span>
+          <span>{module.chapters.length} quiz chapters</span>
         </div>
 
         {isActive ? (
@@ -144,7 +144,11 @@ export default function ModuleCard({
                 Loading…
               </span>
             ) : (
-              isCompleted ? "Review ↺" : completedChapters > 0 ? "Continue →" : "Start →"
+              isCompleted
+                ? "Retry Quiz ↺"
+                : completedChapters > 0
+                ? "Continue Quiz →"
+                : "Start Quiz →"
             )}
           </button>
         ) : null}
@@ -154,7 +158,7 @@ export default function ModuleCard({
       {isActive && !isCompleted && (
         <div className="mt-5 flex items-center gap-2 text-xs text-neutral-400">
           <span className="h-2 w-2 animate-pulse rounded-full bg-[#58cc02]" />
-          <span className="font-bold text-[#6f8f58]">Ready to start</span>
+          <span className="font-bold text-[#6f8f58]">Quiz unlocked</span>
         </div>
       )}
     </div>
