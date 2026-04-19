@@ -1,49 +1,14 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import HomeNewsletter from "@/components/HomeNewsletter";
+import AppHeader from "@/components/AppHeader";
 
 export default async function Home() {
   const session = await auth();
 
   return (
     <div className="duo-shell flex min-h-screen flex-col">
-      <nav className="sticky top-0 z-10 border-b-2 border-[#d7f4c9] bg-[#f6ffef]/90 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4 sm:px-10">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🦜</span>
-            <span className="text-lg font-extrabold tracking-tight text-[#2c5015]">
-              NUSlat
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            {session?.user ? (
-              <>
-                <Link href="/dashboard" className="duo-btn-secondary px-5 py-2 text-sm">
-                  Dashboard
-                </Link>
-                <Link href="/account" className="duo-btn-primary px-5 py-2 text-sm">
-                  Account
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link
-                  href="/auth/signin"
-                  className="duo-btn-secondary px-5 py-2 text-sm"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/auth/signup"
-                  className="duo-btn-primary px-5 py-2 text-sm"
-                >
-                  Get Started
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </nav>
+      <AppHeader />
 
       <main className="flex flex-1 flex-col items-center justify-center px-6 pb-24 pt-16 text-center sm:px-10">
         <div className="mb-4 inline-flex items-center rounded-full border-2 border-[#d7f4c9] bg-white px-4 py-1 text-xs font-extrabold uppercase tracking-wider text-[#46a302]">

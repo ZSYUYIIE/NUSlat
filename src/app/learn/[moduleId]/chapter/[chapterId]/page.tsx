@@ -10,6 +10,7 @@ import { getCharacterStrokeGuide } from "@/lib/strokes";
 import { playThaiAudio } from "@/lib/audio";
 
 type PracticeMode = "quiz" | "writing";
+type WritingSection = "learn" | "quiz";
 
 // Writing evaluation thresholds — adjust these to tune difficulty.
 const WRITING_THRESHOLDS = {
@@ -104,9 +105,11 @@ export default function ChapterPracticePage() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const [practiceMode, setPracticeMode] = useState<PracticeMode>("quiz");
+  const [writingSection, setWritingSection] = useState<WritingSection>("learn");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentCharIndex, setCurrentCharIndex] = useState(0);
   const [strokeStepIndex, setStrokeStepIndex] = useState(0);
+  const [completedCharIndexes, setCompletedCharIndexes] = useState<number[]>([]);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
@@ -114,7 +117,6 @@ export default function ChapterPracticePage() {
   const [savingCompletion, setSavingCompletion] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasInk, setHasInk] = useState(false);
-  const hasInkRef = useRef(false);
   const [writingResult, setWritingResult] = useState<WritingResult | null>(null);
   const [isSpeakingWord, setIsSpeakingWord] = useState<string | null>(null);
   const [lessons, setLessons] = useState<ChapterLesson[]>([]);
@@ -140,9 +142,29 @@ export default function ChapterPracticePage() {
 
   const currentLesson = lessons[currentIndex] ?? null;
   const progress = lessons.length > 0 ? ((currentIndex + 1) / lessons.length) * 100 : 0;
-  const characters = currentLesson?.thaiWord.split("") ?? [];
+  const characters = useMemo(
+    () => (currentLesson?.thaiWord ? currentLesson.thaiWord.split("") : []),
+    [currentLesson?.thaiWord]
+  );
   const selectedCharacter = characters[currentCharIndex] ?? characters[0] ?? "";
   const strokeSteps = getCharacterStrokeGuide(selectedCharacter);
+  const firstIncompleteCharIndex = useMemo(() => {
+    if (characters.length === 0) {
+      return 0;
+    }
+
+    const completed = new Set(completedCharIndexes);
+    for (let i = 0; i < characters.length; i += 1) {
+      if (!completed.has(i)) {
+        return i;
+      }
+    }
+
+    return characters.length - 1;
+  }, [characters, completedCharIndexes]);
+  const isLearningWordComplete =
+    characters.length > 0 &&
+    characters.every((_, index) => completedCharIndexes.includes(index));
 
   useEffect(() => {
     if (!chapter || chapter.moduleId !== moduleId) {
@@ -230,6 +252,9 @@ export default function ChapterPracticePage() {
     setIsCorrect(false);
     setWritingResult(null);
     setPracticeMode("quiz");
+    setWritingSection("learn");
+    setCompletedCharIndexes([]);
+    setHasInk(false);
     setCurrentCharIndex(0);
     setStrokeStepIndex(0);
   }, [chapter, moduleId, router]);
@@ -240,6 +265,9 @@ export default function ChapterPracticePage() {
     setIsAnswered(false);
     setIsCorrect(false);
     setWritingResult(null);
+    setWritingSection("learn");
+    setCompletedCharIndexes([]);
+    setHasInk(false);
     setCurrentCharIndex(0);
     setStrokeStepIndex(0);
   }, [chapterId, lessons.length]);
@@ -266,10 +294,9 @@ export default function ChapterPracticePage() {
     ctx.lineWidth = 10;
     ctx.strokeStyle = "#1a1a1a";
     ctx.clearRect(0, 0, width, height);
-    hasInkRef.current = false;
     setHasInk(false);
     setWritingResult(null);
-  }, [practiceMode, currentIndex]);
+  }, [practiceMode, currentIndex, writingSection]);
 
   useEffect(() => {
     return () => {
@@ -282,6 +309,7 @@ export default function ChapterPracticePage() {
   useEffect(() => {
     setCurrentCharIndex(0);
     setStrokeStepIndex(0);
+    setCompletedCharIndexes([]);
   }, [currentIndex]);
 
   useEffect(() => {
@@ -341,7 +369,6 @@ export default function ChapterPracticePage() {
   const beginDrawing = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const ctx = canvasRef.current?.getContext("2d");
     if (!ctx) return;
-    hasInkRef.current = false;
     const point = getCanvasPoint(event);
     ctx.beginPath();
     ctx.moveTo(point.x, point.y);
@@ -356,7 +383,6 @@ export default function ChapterPracticePage() {
     const point = getCanvasPoint(event);
     ctx.lineTo(point.x, point.y);
     ctx.stroke();
-    hasInkRef.current = true;
     setHasInk(true);
   };
 
@@ -364,9 +390,6 @@ export default function ChapterPracticePage() {
     if (!isDrawing) return;
     setIsDrawing(false);
     event.currentTarget.releasePointerCapture(event.pointerId);
-    if (hasInkRef.current) {
-      checkWriting();
-    }
   };
 
   const clearCanvas = () => {
@@ -375,9 +398,48 @@ export default function ChapterPracticePage() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    hasInkRef.current = false;
     setHasInk(false);
     setWritingResult(null);
+  };
+
+  const handleCheckWriting = () => {
+    if (!hasInk) return;
+    checkWriting();
+  };
+
+  const goToCharacterInOrder = (index: number) => {
+    if (index > firstIncompleteCharIndex) {
+      return;
+    }
+
+    setCurrentCharIndex(index);
+    setStrokeStepIndex(0);
+    clearCanvas();
+  };
+
+  const completeLearnStroke = () => {
+    if (!hasInk) {
+      return;
+    }
+
+    const isLastStroke = strokeStepIndex >= strokeSteps.length - 1;
+
+    if (!isLastStroke) {
+      setStrokeStepIndex((prev) => prev + 1);
+      clearCanvas();
+      return;
+    }
+
+    setCompletedCharIndexes((prev) =>
+      prev.includes(currentCharIndex) ? prev : [...prev, currentCharIndex]
+    );
+
+    if (currentCharIndex < characters.length - 1) {
+      setCurrentCharIndex((prev) => prev + 1);
+      setStrokeStepIndex(0);
+    }
+
+    clearCanvas();
   };
 
   const checkWriting = () => {
@@ -445,18 +507,6 @@ export default function ChapterPracticePage() {
     setIsCorrect(false);
     setWritingResult(null);
     setStrokeStepIndex(0);
-  };
-
-  const moveToNextStrokeStep = () => {
-    if (!hasInk) return;
-    if (strokeStepIndex >= strokeSteps.length - 1) return;
-    setStrokeStepIndex((prev) => prev + 1);
-    setHasInk(false);
-  };
-
-  const moveToPrevStrokeStep = () => {
-    if (strokeStepIndex === 0) return;
-    setStrokeStepIndex((prev) => prev - 1);
   };
 
   const handlePrevWord = () => {
@@ -676,6 +726,38 @@ export default function ChapterPracticePage() {
 
         {practiceMode === "writing" ? (
           <div className="mx-auto max-w-4xl space-y-4">
+            <div className="grid grid-cols-2 gap-2 rounded-2xl border border-[#d7f4c9] bg-[#f8ffef] p-2 sm:max-w-xs">
+              <button
+                onClick={() => {
+                  setWritingSection("learn");
+                  setCompletedCharIndexes([]);
+                  setCurrentCharIndex(0);
+                  setStrokeStepIndex(0);
+                  clearCanvas();
+                }}
+                className={`rounded-xl px-3 py-2 text-xs font-extrabold transition-colors sm:text-sm ${
+                  writingSection === "learn"
+                    ? "bg-[#58cc02] text-white"
+                    : "bg-white text-[#4d6b3a]"
+                }`}
+              >
+                Learn Strokes
+              </button>
+              <button
+                onClick={() => {
+                  setWritingSection("quiz");
+                  clearCanvas();
+                }}
+                className={`rounded-xl px-3 py-2 text-xs font-extrabold transition-colors sm:text-sm ${
+                  writingSection === "quiz"
+                    ? "bg-[#58cc02] text-white"
+                    : "bg-white text-[#4d6b3a]"
+                }`}
+              >
+                Writing Quiz
+              </button>
+            </div>
+
             {/* Word info bar */}
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#d7f4c9] bg-white px-5 py-4">
               <div className="flex items-baseline gap-3">
@@ -686,12 +768,19 @@ export default function ChapterPracticePage() {
                 {characters.length > 1 && characters.map((char, index) => (
                   <button
                     key={`${char}-${index}`}
-                    onClick={() => setCurrentCharIndex(index)}
+                    onClick={() =>
+                      writingSection === "learn"
+                        ? goToCharacterInOrder(index)
+                        : setCurrentCharIndex(index)
+                    }
+                    disabled={writingSection === "learn" && index > firstIncompleteCharIndex}
                     className={`h-9 w-9 rounded-xl text-lg font-extrabold transition-colors ${
                       index === currentCharIndex
                         ? "bg-[#58cc02] text-white"
+                        : writingSection === "learn" && completedCharIndexes.includes(index)
+                        ? "bg-[#e9fdd6] text-[#2c5015]"
                         : "bg-[#f0fae6] text-[#2c5015] hover:bg-[#d7f4c9]"
-                    }`}
+                    } disabled:cursor-not-allowed disabled:opacity-50`}
                   >
                     {char}
                   </button>
@@ -706,7 +795,11 @@ export default function ChapterPracticePage() {
             </div>
 
             {/* Canvas + stroke guide */}
-            <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
+            <div
+              className={`grid gap-4 ${
+                writingSection === "learn" ? "lg:grid-cols-[1fr_280px]" : ""
+              }`}
+            >
               {/* Drawing canvas card */}
               <div className="overflow-hidden rounded-3xl border-2 border-[#d7f4c9] bg-white">
                 <div className="relative aspect-square w-full">
@@ -725,7 +818,7 @@ export default function ChapterPracticePage() {
                       className="select-none font-extrabold leading-none text-[#2c5015]/10"
                       style={{ fontSize: "clamp(80px, 18vmin, 180px)" }}
                     >
-                      {currentLesson.thaiWord}
+                      {writingSection === "learn" ? selectedCharacter : currentLesson.thaiWord}
                     </span>
                   </div>
                   <canvas
@@ -739,7 +832,35 @@ export default function ChapterPracticePage() {
                 </div>
 
                 {/* Result / hint bar below canvas */}
-                {writingResult ? (
+                {writingSection === "learn" ? (
+                  <div className="flex items-center justify-between gap-3 border-t border-[#e8f9db] bg-[#fbfffa] px-5 py-3">
+                    <div>
+                      <p className="text-sm font-extrabold text-[#2c5015]">
+                        Stroke {Math.min(strokeStepIndex + 1, strokeSteps.length)} of {strokeSteps.length}
+                      </p>
+                      <p className="text-xs text-[#6f8f58]">
+                        {strokeSteps[Math.min(strokeStepIndex, strokeSteps.length - 1)]}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={clearCanvas}
+                        className="rounded-full border border-neutral-200 bg-white px-4 py-1.5 text-xs font-bold text-neutral-600 hover:bg-neutral-50"
+                      >
+                        Clear
+                      </button>
+                      <button
+                        onClick={completeLearnStroke}
+                        disabled={!hasInk || isLearningWordComplete}
+                        className="duo-btn-primary px-4 py-1.5 text-xs disabled:opacity-50"
+                      >
+                        {strokeStepIndex >= strokeSteps.length - 1
+                          ? "Finish Character"
+                          : "Next Stroke"}
+                      </button>
+                    </div>
+                  </div>
+                ) : writingResult ? (
                   <div
                     className={`flex items-center justify-between gap-3 border-t px-5 py-3 ${
                       writingResult.passed
@@ -776,73 +897,79 @@ export default function ChapterPracticePage() {
                 ) : (
                   <div className="flex items-center justify-between border-t border-[#e8f9db] bg-[#fbfffa] px-5 py-3">
                     <p className="text-xs text-neutral-400">
-                      {isDrawing ? "Drawing…" : "Trace the character — result appears when you lift your pen"}
+                      {isDrawing
+                        ? "Drawing…"
+                        : "Write the full word naturally, then check pixel recognition."}
                     </p>
-                    <button
-                      onClick={clearCanvas}
-                      className="rounded-full border border-neutral-200 bg-white px-4 py-1.5 text-xs font-bold text-neutral-500 hover:bg-neutral-50"
-                    >
-                      Clear
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={clearCanvas}
+                        className="rounded-full border border-neutral-200 bg-white px-4 py-1.5 text-xs font-bold text-neutral-500 hover:bg-neutral-50"
+                      >
+                        Clear
+                      </button>
+                      <button
+                        onClick={handleCheckWriting}
+                        disabled={!hasInk}
+                        className="duo-btn-primary px-4 py-1.5 text-xs disabled:opacity-50"
+                      >
+                        Check Accuracy
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* Stroke guide sidebar */}
-              <div className="rounded-3xl border border-[#d7f4c9] bg-[#f8fff4] p-4">
-                <p className="mb-3 text-xs font-extrabold uppercase tracking-widest text-[#7f9f69]">
-                  Stroke Order
+              {writingSection === "learn" ? (
+                <div className="rounded-3xl border border-[#d7f4c9] bg-[#f8fff4] p-4">
+                  <p className="mb-3 text-xs font-extrabold uppercase tracking-widest text-[#7f9f69]">
+                    Stroke Order Learning
+                  </p>
+                  <div className="mb-4 flex items-center justify-center rounded-2xl bg-white py-5 shadow-sm">
+                    <span className="text-7xl font-extrabold text-[#2c5015]">{selectedCharacter}</span>
+                  </div>
+                  <div className="space-y-2">
+                    {strokeSteps.map((step, index) => (
+                      <div
+                        key={`${selectedCharacter}-${index}`}
+                        className={`flex w-full items-start gap-2.5 rounded-xl px-3 py-2.5 text-left text-xs ${
+                          index === strokeStepIndex
+                            ? "bg-[#58cc02] text-white"
+                            : index < strokeStepIndex
+                            ? "bg-[#e9fdd6] text-[#2c5015]"
+                            : "border border-neutral-100 bg-white text-neutral-400"
+                        }`}
+                      >
+                        <span className="shrink-0 font-extrabold">{index + 1}.</span>
+                        <span className={index === strokeStepIndex ? "font-bold" : ""}>{step}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-3 text-xs text-[#8aad73]">
+                    Follow each stroke in order. Complete one stroke before moving to the next.
+                  </p>
+                  <p className="mt-1 text-xs font-bold text-[#5c8046]">
+                    Character progress: {completedCharIndexes.length}/{characters.length}
+                  </p>
+                </div>
+              ) : null}
+            </div>
+
+            {writingSection === "learn" && isLearningWordComplete ? (
+              <div className="rounded-2xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3">
+                <p className="text-sm font-extrabold text-[#166534]">
+                  Stroke-order learning complete for this word.
                 </p>
-                {/* Large character display */}
-                <div className="mb-4 flex items-center justify-center rounded-2xl bg-white py-5 shadow-sm">
-                  <span className="text-7xl font-extrabold text-[#2c5015]">{selectedCharacter}</span>
-                </div>
-                {/* Numbered stroke steps — tap to jump */}
-                <div className="space-y-2">
-                  {strokeSteps.map((step, index) => (
-                    <button
-                      key={step}
-                      onClick={() => setStrokeStepIndex(index)}
-                      className={`flex w-full items-start gap-2.5 rounded-xl px-3 py-2.5 text-left text-xs transition-colors ${
-                        index === strokeStepIndex
-                          ? "bg-[#58cc02] text-white"
-                          : index < strokeStepIndex
-                          ? "bg-[#e9fdd6] text-[#2c5015]"
-                          : "border border-neutral-100 bg-white text-neutral-400"
-                      }`}
-                    >
-                      <span className="shrink-0 font-extrabold">{index + 1}.</span>
-                      <span className={index === strokeStepIndex ? "font-bold" : ""}>{step}</span>
-                    </button>
-                  ))}
-                </div>
-                {/* Step navigation */}
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  <button
-                    onClick={moveToPrevStrokeStep}
-                    disabled={strokeStepIndex === 0}
-                    className="rounded-xl border border-[#d7f4c9] bg-white px-3 py-2 text-xs font-bold text-[#4d6b3a] disabled:opacity-40"
-                  >
-                    ← Prev
-                  </button>
-                  <button
-                    onClick={moveToNextStrokeStep}
-                    disabled={!hasInk || strokeStepIndex >= strokeSteps.length - 1}
-                    className="rounded-xl bg-[#58cc02] px-3 py-2 text-xs font-extrabold text-white disabled:opacity-40"
-                  >
-                    Next →
-                  </button>
-                </div>
-                <p className="mt-3 text-xs text-[#8aad73]">
-                  Tap a step to jump to it. Draw each stroke then advance.
+                <p className="text-xs text-[#26724f]">
+                  Continue to the next word, or switch to Writing Quiz to check pixel-level recognition.
                 </p>
               </div>
-            </div>
+            ) : null}
           </div>
         ) : null}
       </div>
 
-      {practiceMode !== "quiz" ? (
+      {practiceMode === "writing" ? (
         <div className="sticky bottom-0 left-0 right-0 border-t-2 border-[#d7f4c9] bg-[#f6ffef]/95 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 sm:px-6">
           <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3">
             <button
@@ -854,10 +981,15 @@ export default function ChapterPracticePage() {
             </button>
             <button
               onClick={handleNextWord}
-              disabled={currentIndex + 1 >= lessons.length}
+              disabled={
+                currentIndex + 1 >= lessons.length ||
+                (writingSection === "learn" && !isLearningWordComplete)
+              }
               className="duo-btn-primary px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Next Word
+              {writingSection === "learn" && !isLearningWordComplete
+                ? "Finish Strokes First"
+                : "Next Word"}
             </button>
           </div>
         </div>
