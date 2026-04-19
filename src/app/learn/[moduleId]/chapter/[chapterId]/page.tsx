@@ -400,7 +400,11 @@ export default function ChapterPracticePage() {
 
         <div className="mb-5 flex justify-end">
           <button
-            onClick={() => router.push(`/vocabulary?level=${moduleId}&chapter=${chapterId}`)}
+            onClick={() =>
+              router.push(
+                `/vocabulary?level=${moduleId}&chapter=${chapter.id}&chapterOrder=${chapter.order}`
+              )
+            }
             className="duo-btn-secondary px-4 py-2 text-sm"
           >
             Open Vocabulary Page

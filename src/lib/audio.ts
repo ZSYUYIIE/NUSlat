@@ -1,5 +1,13 @@
 let activeAudio: HTMLAudioElement | null = null;
 
+function buildTtsEndpoint(text: string): string {
+  const params = new URLSearchParams({
+    text,
+    lang: "th-TH",
+  });
+  return `/api/tts/google?${params.toString()}`;
+}
+
 function loadVoices(): Promise<SpeechSynthesisVoice[]> {
   return new Promise((resolve) => {
     if (typeof window === "undefined" || !window.speechSynthesis) {
@@ -66,8 +74,7 @@ function playWithAudioUrl(text: string): Promise<void> {
     activeAudio = null;
   }
 
-  const encoded = encodeURIComponent(text);
-  const src = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encoded}&tl=th&client=tw-ob`;
+  const src = buildTtsEndpoint(text);
 
   const audio = new Audio(src);
   activeAudio = audio;

@@ -9,6 +9,8 @@ A gamified, Duolingo-style vocabulary learning app built with Next.js, React, Ta
 - 🔐 **Authentication** – Sign in with Google OAuth or Email/Password via NextAuth.js v5
 - ✉️ **Email Verification** – Credentials users must verify email before first sign-in
 - 🏆 **XP System** – Earn XP points as you complete modules
+- 🔊 **Listen with Google TTS** – Thai word audio is served through a server-side TTS endpoint
+- 🗂️ **MongoDB Vocabulary Backend** – Vocabulary cards can be loaded from MongoDB by level/chapter filters
 - 📱 **Fully Responsive** – Works on mobile, tablet, and desktop
 
 ## Tech Stack
@@ -43,6 +45,8 @@ Required variables:
 - `AUTH_SECRET` – A random secret string (generate with `openssl rand -base64 32`)
 - `AUTH_URL` – Your app URL (e.g., `http://localhost:3000`)
 - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` – From [Google Cloud Console](https://console.cloud.google.com/)
+- `GOOGLE_TTS_API_KEY` – Optional, enables official Google Cloud Text-to-Speech synthesis for Listen buttons
+- `VOCAB_ADMIN_TOKEN` – Required to import/replace vocabulary entries via `POST /api/vocabulary`
 - `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` – For email verification delivery
 
 ### 3. Run the development server
@@ -91,6 +95,9 @@ src/
 | `POST` | `/api/auth/resend-verification` | Resend verification link |
 | `GET` | `/api/milestones` | Get current user's completed milestones |
 | `POST` | `/api/milestones` | Mark a milestone as completed |
+| `GET` | `/api/vocabulary` | Get vocabulary from MongoDB (filter by `moduleId`, `chapterId`, `chapterOrder`) |
+| `POST` | `/api/vocabulary` | Secure upsert import (`x-vocab-admin-token` header, optional `replaceChapters`) |
+| `GET` | `/api/tts/google` | Generate playable MP3 for Listen buttons (`text`, optional `lang`) |
 
 ## Deploy on Vercel
 
