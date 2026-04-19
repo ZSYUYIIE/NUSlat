@@ -17,8 +17,15 @@ export async function GET() {
 
     await connectDB();
 
-    const user = await User.findOne({ email }).select(
-      "dailyNotificationOptIn dailyNotificationOptInUpdatedAt lastDailyReminderSentAt"
+    const user = await User.collection.findOne(
+      { email },
+      {
+        projection: {
+          dailyNotificationOptIn: 1,
+          dailyNotificationOptInUpdatedAt: 1,
+          lastDailyReminderSentAt: 1,
+        },
+      }
     );
 
     if (!user) {
@@ -56,20 +63,29 @@ export async function POST(request: NextRequest) {
 
     await connectDB();
 
-    const user = await User.findOneAndUpdate(
+    const updateResult = await User.collection.updateOne(
       { email },
       {
         $set: {
           dailyNotificationOptIn: body.dailyNotificationOptIn,
           dailyNotificationOptInUpdatedAt: new Date(),
         },
-      },
-      { new: true }
-    ).select("dailyNotificationOptIn dailyNotificationOptInUpdatedAt");
+      }
+    );
 
-    if (!user) {
+    if (updateResult.matchedCount === 0) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+
+    const user = await User.collection.findOne(
+      { email },
+      {
+        projection: {
+          dailyNotificationOptIn: 1,
+          dailyNotificationOptInUpdatedAt: 1,
+        },
+      }
+    );
 
     return NextResponse.json({
       message: body.dailyNotificationOptIn

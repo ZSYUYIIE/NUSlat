@@ -39,16 +39,16 @@ export default async function Home() {
           {session?.user ? (
             <>
               <Link
-                href="/dashboard"
+                href="/learn"
                 className="duo-btn-primary px-8 py-3.5 text-sm"
               >
-                Go to Quiz →
+                Go to Learn →
               </Link>
               <Link
-                href="/vocabulary"
+                href="/dashboard"
                 className="duo-btn-secondary px-8 py-3.5 text-sm"
               >
-                Open Vocabulary
+                Go to Quiz
               </Link>
             </>
           ) : (
@@ -70,7 +70,7 @@ export default async function Home() {
         </div>
         {!session?.user ? (
           <Link
-            href="/dashboard"
+            href="/learn"
             className="mt-4 text-xs font-bold text-[#4d6b3a] transition-colors hover:text-[#2c5015]"
           >
             Continue as Guest →
@@ -117,24 +117,24 @@ export default async function Home() {
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="duo-card p-5">
               <p className="text-xs font-extrabold uppercase tracking-wide text-[#7f9f69]">Step 1</p>
-              <h3 className="mt-1 text-lg font-extrabold text-[#2c5015]">Choose Thai Level</h3>
-              <p className="mt-2 text-sm text-[#4d6b3a]">Open Quiz, choose Thai Level 1/2/3, then select a chapter path.</p>
+              <h3 className="mt-1 text-lg font-extrabold text-[#2c5015]">Open Learn</h3>
+              <p className="mt-2 text-sm text-[#4d6b3a]">Choose Thai Level 1/2/3 and follow the chapter order with lock progression.</p>
             </div>
             <div className="duo-card p-5">
               <p className="text-xs font-extrabold uppercase tracking-wide text-[#7f9f69]">Step 2</p>
-              <h3 className="mt-1 text-lg font-extrabold text-[#2c5015]">Practice Modes</h3>
-              <p className="mt-2 text-sm text-[#4d6b3a]">Use quiz mode for recall, writing mode for stroke follow, and vocabulary page for review.</p>
+              <h3 className="mt-1 text-lg font-extrabold text-[#2c5015]">Guided Chapter Practice</h3>
+              <p className="mt-2 text-sm text-[#4d6b3a]">Learn with listen-and-repeat, stroke follow writing, and chapter-by-chapter guidance.</p>
             </div>
             <div className="duo-card p-5">
               <p className="text-xs font-extrabold uppercase tracking-wide text-[#7f9f69]">Step 3</p>
-              <h3 className="mt-1 text-lg font-extrabold text-[#2c5015]">Track Progress</h3>
-              <p className="mt-2 text-sm text-[#4d6b3a]">Complete chapters in order and monitor your chapter milestones from the quiz page.</p>
+              <h3 className="mt-1 text-lg font-extrabold text-[#2c5015]">Take Quizzes</h3>
+              <p className="mt-2 text-sm text-[#4d6b3a]">After guided study, move to Quiz to check retention and earn progress milestones.</p>
             </div>
           </div>
         </section>
 
         <section className="mt-12 w-full max-w-5xl text-left">
-          <HomeDailyNotification isSignedIn={Boolean(session?.user)} />
+          <HomeDailyNotification />
         </section>
 
         <section className="mt-8 w-full max-w-5xl text-left">

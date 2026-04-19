@@ -1,40 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { useSession } from "next-auth/react";
 import Link from "next/link";
-import AppHeader from "@/components/AppHeader";
-import {
-  MODULES,
-  getChapterSequence,
-} from "@/lib/modules";
+import { useSession } from "next-auth/react";
 import ModuleCard from "@/components/ModuleCard";
+import AppHeader from "@/components/AppHeader";
+import { MODULES, getChapterSequence } from "@/lib/modules";
 import { useMilestones } from "@/hooks/useMilestones";
 
-type QuizTrack = "reading" | "listening" | "writing";
-
-const QUIZ_TRACKS: Array<{ id: QuizTrack; title: string; description: string }> = [
-  {
-    id: "reading",
-    title: "Reading Quiz",
-    description: "Read Thai words and match their meanings.",
-  },
-  {
-    id: "listening",
-    title: "Listening Quiz",
-    description: "Listen first, then choose the right meaning.",
-  },
-  {
-    id: "writing",
-    title: "Writing Quiz",
-    description: "Focus on writing accuracy and character form.",
-  },
-];
-
-export default function Dashboard() {
+export default function LearnHub() {
   const { data: session } = useSession();
   const { completedMilestones, error, clearError, loading } = useMilestones();
-  const [quizTrack, setQuizTrack] = useState<QuizTrack>("reading");
 
   const isGuest = !session?.user;
   const userName = session?.user?.name?.split(" ")[0] ?? "Guest";
@@ -72,10 +47,9 @@ export default function Dashboard() {
     <div className="duo-shell min-h-screen">
       <AppHeader />
 
-      {/* Guest sign-in nudge */}
       {isGuest && (
         <div className="border-b border-amber-100 bg-amber-50 px-4 py-2.5 text-center text-xs text-amber-700">
-          You&apos;re in guest mode — progress is saved locally.{" "}
+          You&apos;re in guest mode — progress is saved locally. {" "}
           <Link
             href="/auth/signin"
             className="font-semibold underline underline-offset-2 hover:text-amber-900"
@@ -85,43 +59,49 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
-        {/* Welcome */}
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
         <div className="mb-8 text-center sm:mb-10">
           <h1 className="text-2xl font-extrabold tracking-tight text-[#2c5015] sm:text-4xl">
-            {isGuest ? "Welcome, Guest" : `Welcome back, ${userName}`}
+            {isGuest ? "Learn as Guest" : `Welcome to Learn, ${userName}`}
           </h1>
           <p className="mt-2 text-sm text-[#4d6b3a] sm:text-base">
-            Learn by chapter first, then clear quizzes to unlock the next level
+            Follow each chapter in order with guided practice before taking quizzes.
+          </p>
+          <p className="mt-2 text-xs font-bold text-[#7f9f69]">
+            Learning modules are being prepared and are not fully implemented yet.
           </p>
         </div>
 
-        <div className="mb-8">
-          <h2 className="mb-3 text-xs font-extrabold uppercase tracking-widest text-[#87a66f]">
-            Quiz Tracks
-          </h2>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {QUIZ_TRACKS.map((track) => {
-              const selected = track.id === quizTrack;
-              return (
-                <button
-                  key={track.id}
-                  onClick={() => setQuizTrack(track.id)}
-                  className={`rounded-2xl border px-4 py-4 text-left transition-colors ${
-                    selected
-                      ? "border-[#8cdb4d] bg-[#f3ffe9]"
-                      : "border-[#d7f4c9] bg-white hover:border-[#bfe89f]"
-                  }`}
-                >
-                  <p className="text-sm font-extrabold text-[#2c5015]">{track.title}</p>
-                  <p className="mt-1 text-xs text-[#4d6b3a]">{track.description}</p>
-                </button>
-              );
-            })}
+        <div className="mb-8 grid gap-3 sm:grid-cols-3">
+          <div className="duo-card p-4">
+            <p className="text-xs font-extrabold uppercase tracking-wide text-[#7f9f69]">
+              Guided Step 1
+            </p>
+            <h3 className="mt-1 text-sm font-extrabold text-[#2c5015]">Listen and Repeat</h3>
+            <p className="mt-1 text-xs text-[#4d6b3a]">
+              Hear Thai words and repeat pronunciation before answering.
+            </p>
+          </div>
+          <div className="duo-card p-4">
+            <p className="text-xs font-extrabold uppercase tracking-wide text-[#7f9f69]">
+              Guided Step 2
+            </p>
+            <h3 className="mt-1 text-sm font-extrabold text-[#2c5015]">Stroke Follow</h3>
+            <p className="mt-1 text-xs text-[#4d6b3a]">
+              Practice writing in stroke order before moving to free write checks.
+            </p>
+          </div>
+          <div className="duo-card p-4">
+            <p className="text-xs font-extrabold uppercase tracking-wide text-[#7f9f69]">
+              Guided Step 3
+            </p>
+            <h3 className="mt-1 text-sm font-extrabold text-[#2c5015]">Checkpoint Quiz</h3>
+            <p className="mt-1 text-xs text-[#4d6b3a]">
+              End each chapter with a quiz checkpoint to lock in retention.
+            </p>
           </div>
         </div>
 
-        {/* Loading skeleton */}
         {loading && (
           <div className="duo-card mb-8 animate-pulse p-6">
             <div className="mb-4 h-3 w-40 rounded-full bg-neutral-100" />
@@ -129,21 +109,9 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Error message */}
         {error && (
           <div className="mb-6 flex items-center justify-between gap-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-600">
             <div className="flex items-center gap-2">
-              <svg
-                className="h-4 w-4 shrink-0"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
               <span>{error}</span>
             </div>
             <button
@@ -156,12 +124,10 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Quiz levels */}
         <div className="space-y-3">
           <h2 className="text-xs font-extrabold uppercase tracking-widest text-[#87a66f]">
-            Quiz Levels
+            Learning Levels
           </h2>
-
           <div>
             {MODULES.map((module, index) => {
               const {
@@ -170,6 +136,7 @@ export default function Dashboard() {
                 isActive,
                 completedChapters,
               } = getModuleStatus(module.id, index);
+
               return (
                 <div key={module.id}>
                   <ModuleCard
@@ -178,7 +145,9 @@ export default function Dashboard() {
                     isLocked={isLocked}
                     isActive={isActive}
                     completedChapters={completedChapters}
-                    buildHref={(moduleId) => `/learn/${moduleId}?quizType=${quizTrack}`}
+                    mode="learn"
+                    disableAction
+                    disabledActionLabel="Learning coming soon"
                   />
                   {index < MODULES.length - 1 && (
                     <div className="flex justify-center py-2">
@@ -195,24 +164,15 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Completion */}
         {completedMilestones.length === allChapterIds.length && (
           <div className="duo-card mt-8 p-8 text-center">
-            <div className="mb-3 text-4xl">🏆</div>
+            <div className="mb-3 text-4xl">🎓</div>
             <h3 className="text-xl font-extrabold tracking-tight text-[#2c5015]">
-              Quiz Journey Complete
+              Learning Journey Complete
             </h3>
             <p className="mt-2 text-sm text-[#4d6b3a]">
-              You&apos;ve cleared every chapter quiz. Amazing work!
+              You&apos;ve finished guided learning for every chapter.
             </p>
-            {isGuest && (
-              <Link
-                href="/auth/signup"
-                className="duo-btn-primary mt-5 inline-block px-6 py-2.5 text-sm"
-              >
-                Create an account to keep your progress
-              </Link>
-            )}
           </div>
         )}
       </div>

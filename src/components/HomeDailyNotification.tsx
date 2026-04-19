@@ -2,21 +2,38 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 
-type HomeDailyNotificationProps = {
-  isSignedIn: boolean;
-};
+const LOCAL_OPT_IN_KEY = "nuslat_daily_notification_opt_in";
 
-export default function HomeDailyNotification({
-  isSignedIn,
-}: HomeDailyNotificationProps) {
+export default function HomeDailyNotification() {
+  const { status } = useSession();
+  const isSignedIn = status === "authenticated";
+  const isAuthLoading = status === "loading";
+
   const [optedIn, setOptedIn] = useState(false);
-  const [loading, setLoading] = useState(isSignedIn);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    try {
+      const saved = localStorage.getItem(LOCAL_OPT_IN_KEY);
+      if (saved === "true") {
+        setOptedIn(true);
+      }
+    } catch {
+      // Ignore localStorage failures.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isAuthLoading) {
+      setLoading(true);
+      return;
+    }
+
     if (!isSignedIn) {
       setLoading(false);
       return;
@@ -39,10 +56,16 @@ export default function HomeDailyNotification({
         };
 
         if (!active) return;
-        setOptedIn(Boolean(data.dailyNotificationOptIn));
+        const nextValue = Boolean(data.dailyNotificationOptIn);
+        setOptedIn(nextValue);
+        try {
+          localStorage.setItem(LOCAL_OPT_IN_KEY, String(nextValue));
+        } catch {
+          // Ignore localStorage failures.
+        }
       } catch {
         if (!active) return;
-        setError("Could not load your reminder setting. Try refreshing.");
+        setError("Could not sync reminder setting from server. Showing local preference.");
       } finally {
         if (active) {
           setLoading(false);
@@ -55,16 +78,26 @@ export default function HomeDailyNotification({
     return () => {
       active = false;
     };
-  }, [isSignedIn]);
+  }, [isAuthLoading, isSignedIn]);
 
   const togglePreference = async (nextValue: boolean) => {
-    if (!isSignedIn) return;
-
     const previous = optedIn;
     setOptedIn(nextValue);
-    setSaving(true);
     setMessage(null);
     setError(null);
+
+    try {
+      localStorage.setItem(LOCAL_OPT_IN_KEY, String(nextValue));
+    } catch {
+      // Ignore localStorage failures.
+    }
+
+    if (!isSignedIn) {
+      setMessage("Saved locally. Sign in to sync this reminder preference to your account.");
+      return;
+    }
+
+    setSaving(true);
 
     try {
       const response = await fetch("/api/notifications/preferences", {
@@ -86,6 +119,11 @@ export default function HomeDailyNotification({
       );
     } catch {
       setOptedIn(previous);
+      try {
+        localStorage.setItem(LOCAL_OPT_IN_KEY, String(previous));
+      } catch {
+        // Ignore localStorage failures.
+      }
       setError("Could not save your reminder setting. Please try again.");
     } finally {
       setSaving(false);
@@ -106,7 +144,7 @@ export default function HomeDailyNotification({
             type="checkbox"
             checked={optedIn}
             onChange={(event) => togglePreference(event.target.checked)}
-            disabled={!isSignedIn || loading || saving}
+            disabled={isAuthLoading || loading || saving}
             className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#9bc47a] text-[#58cc02] focus:ring-[#58cc02]"
           />
           <span className="font-semibold">
@@ -116,7 +154,7 @@ export default function HomeDailyNotification({
 
         {!isSignedIn ? (
           <p className="mt-2 text-xs text-[#5c7d46]">
-            Sign in to enable reminders for your email address. {" "}
+            You can set this locally now. Sign in to enable email delivery and sync preference. {" "}
             <Link
               href="/auth/signin"
               className="font-bold text-[#2c5015] underline underline-offset-2"
@@ -132,7 +170,7 @@ export default function HomeDailyNotification({
 
         {loading ? (
           <p className="mt-3 text-xs font-bold text-[#7f9f69]">
-            Loading your preference...
+            Loading reminder preference...
           </p>
         ) : null}
         {saving ? (

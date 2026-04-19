@@ -10,6 +10,10 @@ interface ModuleCardProps {
   isLocked: boolean;
   isActive: boolean;
   completedChapters: number;
+  mode?: "quiz" | "learn";
+  disableAction?: boolean;
+  disabledActionLabel?: string;
+  buildHref?: (moduleId: string) => string;
 }
 
 export default function ModuleCard({
@@ -18,15 +22,20 @@ export default function ModuleCard({
   isLocked,
   isActive,
   completedChapters,
+  mode = "quiz",
+  disableAction = false,
+  disabledActionLabel = "Coming soon",
+  buildHref,
 }: ModuleCardProps) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleStart = async () => {
-    if (isLocked || loading) return;
+    if (isLocked || loading || disableAction) return;
     setLoading(true);
     try {
-      router.push(`/learn/${module.id}`);
+      const href = buildHref ? buildHref(module.id) : `/learn/${module.id}`;
+      router.push(href);
     } finally {
       setLoading(false);
     }
@@ -80,7 +89,11 @@ export default function ModuleCard({
                 d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
               />
             </svg>
-            <span className="text-xs font-medium tracking-wide">Complete previous level quiz</span>
+            <span className="text-xs font-medium tracking-wide">
+              {mode === "learn"
+                ? "Complete previous learning level"
+                : "Complete previous level quiz"}
+            </span>
           </div>
         </div>
       )}
@@ -97,7 +110,9 @@ export default function ModuleCard({
             {module.title}
           </h3>
           <p className="text-sm text-[#5b7a46]">
-            {completedChapters}/{module.chapters.length} quiz chapters cleared
+            {mode === "learn"
+              ? `${completedChapters}/${module.chapters.length} chapters learned`
+              : `${completedChapters}/${module.chapters.length} quiz chapters cleared`}
           </p>
         </div>
       </div>
@@ -110,47 +125,66 @@ export default function ModuleCard({
       {/* Footer: quiz info + action */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="duo-chip flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-[#3f6f25]">
-          <span>🧩</span>
-          <span>{module.chapters.length} quiz chapters</span>
+          <span>{mode === "learn" ? "📘" : "🧩"}</span>
+          <span>
+            {mode === "learn"
+              ? `${module.chapters.length} guided chapters`
+              : `${module.chapters.length} quiz chapters`}
+          </span>
         </div>
 
         {isActive ? (
-          <button
-            onClick={handleStart}
-            disabled={loading}
-            className="duo-btn-primary w-full px-5 py-2.5 text-sm sm:w-auto sm:py-2"
-          >
-            {loading ? (
-              <span className="flex items-center gap-2">
-                <svg
-                  className="h-3.5 w-3.5 animate-spin"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                  />
-                </svg>
-                Loading…
-              </span>
-            ) : (
-              isCompleted
-                ? "Retry Quiz ↺"
-                : completedChapters > 0
-                ? "Continue Quiz →"
-                : "Start Quiz →"
-            )}
-          </button>
+          disableAction ? (
+            <button
+              disabled
+              className="duo-btn-secondary w-full cursor-not-allowed px-5 py-2.5 text-sm opacity-60 sm:w-auto sm:py-2"
+            >
+              {disabledActionLabel}
+            </button>
+          ) : (
+            <button
+              onClick={handleStart}
+              disabled={loading}
+              className="duo-btn-primary w-full px-5 py-2.5 text-sm sm:w-auto sm:py-2"
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <svg
+                    className="h-3.5 w-3.5 animate-spin"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                    />
+                  </svg>
+                  Loading…
+                </span>
+              ) : (
+                mode === "learn"
+                  ? isCompleted
+                    ? "Review Learning ↺"
+                    : completedChapters > 0
+                    ? "Continue Learning →"
+                    : "Start Learning →"
+                  : isCompleted
+                  ? "Retry Quiz ↺"
+                  : completedChapters > 0
+                  ? "Continue Quiz →"
+                  : "Start Quiz →"
+              )}
+            </button>
+          )
         ) : null}
       </div>
 
@@ -158,7 +192,9 @@ export default function ModuleCard({
       {isActive && !isCompleted && (
         <div className="mt-5 flex items-center gap-2 text-xs text-neutral-400">
           <span className="h-2 w-2 animate-pulse rounded-full bg-[#58cc02]" />
-          <span className="font-bold text-[#6f8f58]">Quiz unlocked</span>
+          <span className="font-bold text-[#6f8f58]">
+            {mode === "learn" ? "Learning unlocked" : "Quiz unlocked"}
+          </span>
         </div>
       )}
     </div>

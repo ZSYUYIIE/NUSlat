@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useMilestones } from "@/hooks/useMilestones";
 import AppHeader from "@/components/AppHeader";
 import { getChaptersByModule } from "@/data/chapters";
@@ -11,11 +11,29 @@ import {
   isChapterUnlocked,
 } from "@/lib/modules";
 
+type QuizTrack = "reading" | "listening" | "writing";
+
+function normalizeQuizTrack(value: string | null): QuizTrack {
+  if (value === "listening" || value === "writing") {
+    return value;
+  }
+  return "reading";
+}
+
 export default function LearnPage() {
   const params = useParams();
   const moduleId = params?.moduleId as string;
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { completedMilestones, loading } = useMilestones();
+
+  const quizTrack = normalizeQuizTrack(searchParams.get("quizType"));
+  const quizTrackLabel =
+    quizTrack === "listening"
+      ? "Listening Quiz"
+      : quizTrack === "writing"
+      ? "Writing Quiz"
+      : "Reading Quiz";
 
   const chapters = useMemo(() => {
     if (!moduleId) {
@@ -56,12 +74,12 @@ export default function LearnPage() {
       getNextIncompleteChapterInModule(moduleId, completedMilestones) ??
       chapters[0]?.id;
     if (!chapterId) return;
-    router.push(`/learn/${moduleId}/chapter/${chapterId}`);
+    router.push(`/learn/${moduleId}/chapter/${chapterId}?quizType=${quizTrack}`);
   };
 
   const openChapter = (chapterId: string) => {
     if (!isChapterUnlocked(chapterId, completedMilestones)) return;
-    router.push(`/learn/${moduleId}/chapter/${chapterId}`);
+    router.push(`/learn/${moduleId}/chapter/${chapterId}?quizType=${quizTrack}`);
   };
 
   return (
@@ -71,14 +89,14 @@ export default function LearnPage() {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-extrabold uppercase tracking-widest text-[#87a66f]">
-              Thai Level Hub
+              Quiz Level Hub
             </p>
             <h1 className="text-2xl font-extrabold tracking-tight text-[#2c5015] sm:text-4xl">
               {moduleData.title}
             </h1>
             <p className="mt-2 text-sm text-[#4d6b3a]">{moduleData.description}</p>
           </div>
-          <div className="duo-chip px-3 py-1 text-xs font-bold text-[#3f6f25]">Level Hub</div>
+          <div className="duo-chip px-3 py-1 text-xs font-bold text-[#3f6f25]">{quizTrackLabel}</div>
         </div>
 
         <div className="duo-card mb-6 p-5 sm:p-6">
@@ -141,7 +159,11 @@ export default function LearnPage() {
                 </div>
 
                 <p className="mb-4 text-sm text-[#4d6b3a]">
-                  {chapter.lessons.length} words • quiz, vocabulary, and writing practice
+                  {quizTrack === "listening"
+                    ? `${chapter.lessons.length} words • listening and meaning selection`
+                    : quizTrack === "writing"
+                    ? `${chapter.lessons.length} words • writing quiz focus`
+                    : `${chapter.lessons.length} words • reading and meaning selection`}
                 </p>
 
                 <button
@@ -149,7 +171,7 @@ export default function LearnPage() {
                   disabled={!unlocked}
                   className="duo-btn-primary w-full px-4 py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {completed ? "Review Chapter" : "Open Chapter"}
+                  {completed ? `Review ${quizTrackLabel}` : `Open ${quizTrackLabel}`}
                 </button>
               </div>
             );

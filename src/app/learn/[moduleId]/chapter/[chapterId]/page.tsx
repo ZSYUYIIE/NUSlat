@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useMilestones } from "@/hooks/useMilestones";
 import AppHeader from "@/components/AppHeader";
 import { getChapterById } from "@/data/chapters";
@@ -11,6 +11,14 @@ import { playThaiAudio } from "@/lib/audio";
 
 type PracticeMode = "quiz" | "writing";
 type WritingSection = "learn" | "quiz";
+type QuizTrack = "reading" | "listening" | "writing";
+
+function normalizeQuizTrack(value: string | null): QuizTrack {
+  if (value === "listening" || value === "writing") {
+    return value;
+  }
+  return "reading";
+}
 
 // Writing evaluation thresholds — adjust these to tune difficulty.
 const WRITING_THRESHOLDS = {
@@ -98,9 +106,13 @@ function toFallbackLessons(chapterId: string): ChapterLesson[] {
 
 export default function ChapterPracticePage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const moduleId = params?.moduleId as string;
   const chapterId = params?.chapterId as string;
   const router = useRouter();
+  const quizTrack = normalizeQuizTrack(searchParams.get("quizType"));
+  const isListeningQuiz = quizTrack === "listening";
+  const isWritingTrack = quizTrack === "writing";
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -148,6 +160,12 @@ export default function ChapterPracticePage() {
   );
   const selectedCharacter = characters[currentCharIndex] ?? characters[0] ?? "";
   const strokeSteps = getCharacterStrokeGuide(selectedCharacter);
+  const selectedTrackLabel =
+    isListeningQuiz ? "LISTENING QUIZ" : isWritingTrack ? "WRITING QUIZ" : "READING QUIZ";
+  const quizPrompt = isListeningQuiz
+    ? "Listen and choose the meaning"
+    : "What does this word mean?";
+  const hideWordUntilAnswered = isListeningQuiz && !isAnswered;
   const firstIncompleteCharIndex = useMemo(() => {
     if (characters.length === 0) {
       return 0;
@@ -242,7 +260,7 @@ export default function ChapterPracticePage() {
 
   useEffect(() => {
     if (!chapter || chapter.moduleId !== moduleId) {
-      router.push(`/learn/${moduleId}`);
+      router.push(`/learn/${moduleId}?quizType=${quizTrack}`);
       return;
     }
 
@@ -251,13 +269,13 @@ export default function ChapterPracticePage() {
     setIsAnswered(false);
     setIsCorrect(false);
     setWritingResult(null);
-    setPracticeMode("quiz");
-    setWritingSection("learn");
+    setPracticeMode(isWritingTrack ? "writing" : "quiz");
+    setWritingSection(isWritingTrack ? "quiz" : "learn");
     setCompletedCharIndexes([]);
     setHasInk(false);
     setCurrentCharIndex(0);
     setStrokeStepIndex(0);
-  }, [chapter, moduleId, router]);
+  }, [chapter, isWritingTrack, moduleId, quizTrack, router]);
 
   useEffect(() => {
     setCurrentIndex(0);
@@ -265,12 +283,13 @@ export default function ChapterPracticePage() {
     setIsAnswered(false);
     setIsCorrect(false);
     setWritingResult(null);
-    setWritingSection("learn");
+    setPracticeMode(isWritingTrack ? "writing" : "quiz");
+    setWritingSection(isWritingTrack ? "quiz" : "learn");
     setCompletedCharIndexes([]);
     setHasInk(false);
     setCurrentCharIndex(0);
     setStrokeStepIndex(0);
-  }, [chapterId, lessons.length]);
+  }, [chapterId, isWritingTrack, lessons.length]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -316,6 +335,17 @@ export default function ChapterPracticePage() {
     setStrokeStepIndex(0);
   }, [currentCharIndex]);
 
+  useEffect(() => {
+    if (!isListeningQuiz) return;
+    if (practiceMode !== "quiz") return;
+    if (!currentLesson?.thaiWord) return;
+
+    setIsSpeakingWord(currentLesson.thaiWord);
+    playThaiAudio(currentLesson.thaiWord)
+      .catch(() => undefined)
+      .finally(() => setIsSpeakingWord(null));
+  }, [currentIndex, currentLesson?.thaiWord, isListeningQuiz, practiceMode]);
+
   if (!chapter || chapter.moduleId !== moduleId) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F5F5F7]">
@@ -341,7 +371,7 @@ export default function ChapterPracticePage() {
             {lessonsError ?? "This chapter has no vocabulary in MongoDB yet."}
           </p>
           <button
-            onClick={() => router.push(`/learn/${moduleId}`)}
+            onClick={() => router.push(`/learn/${moduleId}?quizType=${quizTrack}`)}
             className="duo-btn-secondary mt-6 w-full px-4 py-3 text-sm"
           >
             Back to Level Chapters
@@ -565,14 +595,16 @@ export default function ChapterPracticePage() {
           <div className="space-y-3">
             {nextInModule ? (
               <button
-                onClick={() => router.push(`/learn/${moduleId}/chapter/${nextInModule}`)}
+                onClick={() =>
+                  router.push(`/learn/${moduleId}/chapter/${nextInModule}?quizType=${quizTrack}`)
+                }
                 className="duo-btn-primary w-full px-4 py-3 text-sm"
               >
                 Continue to Next Chapter
               </button>
             ) : null}
             <button
-              onClick={() => router.push(`/learn/${moduleId}`)}
+              onClick={() => router.push(`/learn/${moduleId}?quizType=${quizTrack}`)}
               className="duo-btn-secondary w-full px-4 py-3 text-sm"
             >
               Back to Level Chapters
@@ -599,7 +631,7 @@ export default function ChapterPracticePage() {
               {chapter.title}
             </p>
             <p className="text-xs font-bold text-[#4f7340] sm:text-sm">
-              Word {currentIndex + 1} of {lessons.length} • {practiceMode.toUpperCase()}
+              Word {currentIndex + 1} of {lessons.length} • {selectedTrackLabel}
             </p>
           </div>
           <div className="flex-1 px-2">
@@ -611,7 +643,7 @@ export default function ChapterPracticePage() {
             </div>
           </div>
           <button
-            onClick={() => router.push(`/learn/${moduleId}`)}
+            onClick={() => router.push(`/learn/${moduleId}?quizType=${quizTrack}`)}
             className="duo-btn-secondary px-3 py-2 text-xs sm:px-4 sm:text-sm"
           >
             Chapters
@@ -627,7 +659,7 @@ export default function ChapterPracticePage() {
               practiceMode === "quiz" ? "bg-[#58cc02] text-white" : "bg-white text-[#4d6b3a]"
             }`}
           >
-            Quiz
+            {isListeningQuiz ? "Listening" : "Reading"}
           </button>
           <button
             onClick={() => setPracticeMode("writing")}
@@ -657,20 +689,24 @@ export default function ChapterPracticePage() {
             <div className="grid gap-4 lg:grid-cols-[1.05fr_1fr]">
               <div className="duo-card p-6 sm:p-8">
                 <p className="mb-4 text-center text-xs font-extrabold uppercase tracking-wide text-[#7f9f69] sm:text-sm">
-                  What does this word mean?
+                  {quizPrompt}
                 </p>
                 <h2 className="mb-3 text-center text-4xl font-extrabold tracking-tight text-[#2c5015] sm:text-5xl">
-                  {currentLesson.thaiWord}
+                  {hideWordUntilAnswered ? "•••" : currentLesson.thaiWord}
                 </h2>
                 <p className="mb-4 text-center text-base font-bold text-[#5a7c45] sm:text-lg">
-                  {currentLesson.phonetic}
+                  {hideWordUntilAnswered ? "Listen carefully" : currentLesson.phonetic}
                 </p>
                 <div className="flex justify-center">
                   <button
                     onClick={() => speakThai(currentLesson.thaiWord)}
                     className="rounded-full border border-[#bfe89f] bg-white px-3 py-1 text-xs font-extrabold text-[#3e7422]"
                   >
-                    {isSpeakingWord === currentLesson.thaiWord ? "Playing..." : "Listen"}
+                    {isSpeakingWord === currentLesson.thaiWord
+                      ? "Playing..."
+                      : isListeningQuiz
+                      ? "Play Again"
+                      : "Listen"}
                   </button>
                 </div>
               </div>

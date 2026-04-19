@@ -38,38 +38,47 @@ async function dispatchDailyReminders(): Promise<DispatchSummary> {
   const now = new Date();
   const utcDayStart = getTodayUtcStart(now);
 
-  const users = await User.find({
-    dailyNotificationOptIn: true,
-    isEmailVerified: true,
-    email: { $exists: true, $ne: "" },
-    $or: [
-      { lastDailyReminderSentAt: { $exists: false } },
-      { lastDailyReminderSentAt: { $lt: utcDayStart } },
-    ],
-  }).select("_id name email");
+  const users = await User.collection
+    .find({
+      dailyNotificationOptIn: true,
+      isEmailVerified: true,
+      email: { $exists: true, $ne: "" },
+      $or: [
+        { lastDailyReminderSentAt: { $exists: false } },
+        { lastDailyReminderSentAt: { $lt: utcDayStart } },
+      ],
+    })
+    .project({ _id: 1, name: 1, email: 1 })
+    .toArray();
 
   if (users.length === 0) {
     return { eligibleUsers: 0, sent: 0, failed: 0 };
   }
 
-  const sentUserIds: Array<string> = [];
+  const sentUserIds: Array<unknown> = [];
   let failed = 0;
 
   for (const user of users) {
+    const email = typeof user.email === "string" ? user.email : "";
+    if (!email) {
+      failed += 1;
+      continue;
+    }
+
     const result = await sendDailyReminderEmail({
-      to: user.email,
-      name: user.name,
+      to: email,
+      name: typeof user.name === "string" ? user.name : undefined,
     });
 
     if (result.sent) {
-      sentUserIds.push(user._id.toString());
+      sentUserIds.push(user._id);
     } else {
       failed += 1;
     }
   }
 
   if (sentUserIds.length > 0) {
-    await User.updateMany(
+    await User.collection.updateMany(
       { _id: { $in: sentUserIds } },
       { $set: { lastDailyReminderSentAt: now } }
     );
