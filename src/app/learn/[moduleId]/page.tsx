@@ -13,6 +13,12 @@ import {
 
 type QuizTrack = "reading" | "listening" | "writing";
 
+const QUIZ_TRACKS: Array<{ id: QuizTrack; label: string }> = [
+  { id: "reading", label: "Reading Quiz" },
+  { id: "listening", label: "Listening Quiz" },
+  { id: "writing", label: "Writing Quiz" },
+];
+
 function normalizeQuizTrack(value: string | null): QuizTrack {
   if (value === "listening" || value === "writing") {
     return value;
@@ -34,6 +40,7 @@ export default function LearnPage() {
       : quizTrack === "writing"
       ? "Writing Quiz"
       : "Reading Quiz";
+  const isListeningDummy = quizTrack === "listening";
 
   const chapters = useMemo(() => {
     if (!moduleId) {
@@ -70,6 +77,7 @@ export default function LearnPage() {
   );
 
   const startRecommended = () => {
+    if (isListeningDummy) return;
     const chapterId =
       getNextIncompleteChapterInModule(moduleId, completedMilestones) ??
       chapters[0]?.id;
@@ -78,8 +86,15 @@ export default function LearnPage() {
   };
 
   const openChapter = (chapterId: string) => {
+    if (isListeningDummy) return;
     if (!isChapterUnlocked(chapterId, completedMilestones)) return;
     router.push(`/learn/${moduleId}/chapter/${chapterId}?quizType=${quizTrack}`);
+  };
+
+  const switchQuizTrack = (track: QuizTrack) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("quizType", track);
+    router.push(`/learn/${moduleId}?${params.toString()}`);
   };
 
   return (
@@ -96,8 +111,29 @@ export default function LearnPage() {
             </h1>
             <p className="mt-2 text-sm text-[#4d6b3a]">{moduleData.description}</p>
           </div>
-          <div className="duo-chip px-3 py-1 text-xs font-bold text-[#3f6f25]">{quizTrackLabel}</div>
+          <div className="grid grid-cols-3 gap-2 rounded-2xl border border-[#d7f4c9] bg-[#f8ffef] p-2">
+            {QUIZ_TRACKS.map((track) => (
+              <button
+                key={track.id}
+                onClick={() => switchQuizTrack(track.id)}
+                className={`rounded-xl px-3 py-2 text-xs font-extrabold transition-colors sm:text-sm ${
+                  quizTrack === track.id
+                    ? "bg-[#58cc02] text-white"
+                    : "bg-white text-[#4d6b3a] hover:text-[#2c5015]"
+                }`}
+              >
+                {track.label}
+              </button>
+            ))}
+          </div>
         </div>
+
+        {isListeningDummy ? (
+          <div className="mb-6 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+            Listening quiz is a dummy placeholder for now and is not implemented yet.
+            Please use Reading Quiz or Writing Quiz.
+          </div>
+        ) : null}
 
         <div className="duo-card mb-6 p-5 sm:p-6">
           <div className="mb-3 flex items-center justify-between text-sm font-bold text-[#2c5015]">
@@ -116,10 +152,14 @@ export default function LearnPage() {
             </p>
             <button
               onClick={startRecommended}
-              disabled={loading}
+              disabled={loading || isListeningDummy}
               className="duo-btn-primary px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading ? "Loading..." : "Start Recommended Chapter"}
+              {loading
+                ? "Loading..."
+                : isListeningDummy
+                ? "Listening Quiz Coming Soon"
+                : "Start Recommended Chapter"}
             </button>
           </div>
         </div>
@@ -168,10 +208,14 @@ export default function LearnPage() {
 
                 <button
                   onClick={() => openChapter(chapter.id)}
-                  disabled={!unlocked}
+                  disabled={!unlocked || isListeningDummy}
                   className="duo-btn-primary w-full px-4 py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {completed ? `Review ${quizTrackLabel}` : `Open ${quizTrackLabel}`}
+                  {isListeningDummy
+                    ? "Listening Quiz Coming Soon"
+                    : completed
+                    ? `Review ${quizTrackLabel}`
+                    : `Open ${quizTrackLabel}`}
                 </button>
               </div>
             );

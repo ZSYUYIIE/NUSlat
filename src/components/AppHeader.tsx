@@ -23,6 +23,11 @@ export default function AppHeader() {
   const router = useRouter();
   const { data: session } = useSession();
 
+  const isLearnHub = pathname === "/learn";
+  const isQuizRoute =
+    pathname.startsWith("/dashboard") ||
+    (pathname.startsWith("/learn/") && pathname !== "/learn");
+
   const userName = session?.user?.name?.split(" ")[0] ?? "Guest";
 
   return (
@@ -42,8 +47,8 @@ export default function AppHeader() {
 
         <nav className="flex flex-wrap items-center gap-2">
           <NavItem href="/" label="Home" active={pathname === "/"} />
-          <NavItem href="/learn" label="Learn" active={pathname.startsWith("/learn")} />
-          <NavItem href="/dashboard" label="Quiz" active={pathname.startsWith("/dashboard")} />
+          <NavItem href="/learn" label="Learn" active={isLearnHub} />
+          <NavItem href="/dashboard" label="Quiz" active={isQuizRoute} />
           <NavItem href="/vocabulary" label="Vocabulary" active={pathname.startsWith("/vocabulary")} />
           <NavItem href="/account" label="Account" active={pathname.startsWith("/account")} />
         </nav>

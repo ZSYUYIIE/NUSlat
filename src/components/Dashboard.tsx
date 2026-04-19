@@ -22,7 +22,7 @@ const QUIZ_TRACKS: Array<{ id: QuizTrack; title: string; description: string }> 
   {
     id: "listening",
     title: "Listening Quiz",
-    description: "Listen first, then choose the right meaning.",
+    description: "Dummy for now (coming soon).",
   },
   {
     id: "writing",
@@ -92,7 +92,7 @@ export default function Dashboard() {
             {isGuest ? "Welcome, Guest" : `Welcome back, ${userName}`}
           </h1>
           <p className="mt-2 text-sm text-[#4d6b3a] sm:text-base">
-            Learn by chapter first, then clear quizzes to unlock the next level
+            Choose Reading, Listening, or Writing quiz track and clear chapters in order
           </p>
         </div>
 

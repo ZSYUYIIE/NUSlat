@@ -160,12 +160,7 @@ export default function ChapterPracticePage() {
   );
   const selectedCharacter = characters[currentCharIndex] ?? characters[0] ?? "";
   const strokeSteps = getCharacterStrokeGuide(selectedCharacter);
-  const selectedTrackLabel =
-    isListeningQuiz ? "LISTENING QUIZ" : isWritingTrack ? "WRITING QUIZ" : "READING QUIZ";
-  const quizPrompt = isListeningQuiz
-    ? "Listen and choose the meaning"
-    : "What does this word mean?";
-  const hideWordUntilAnswered = isListeningQuiz && !isAnswered;
+  const selectedTrackLabel = isWritingTrack ? "WRITING QUIZ" : "READING QUIZ";
   const firstIncompleteCharIndex = useMemo(() => {
     if (characters.length === 0) {
       return 0;
@@ -335,17 +330,6 @@ export default function ChapterPracticePage() {
     setStrokeStepIndex(0);
   }, [currentCharIndex]);
 
-  useEffect(() => {
-    if (!isListeningQuiz) return;
-    if (practiceMode !== "quiz") return;
-    if (!currentLesson?.thaiWord) return;
-
-    setIsSpeakingWord(currentLesson.thaiWord);
-    playThaiAudio(currentLesson.thaiWord)
-      .catch(() => undefined)
-      .finally(() => setIsSpeakingWord(null));
-  }, [currentIndex, currentLesson?.thaiWord, isListeningQuiz, practiceMode]);
-
   if (!chapter || chapter.moduleId !== moduleId) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F5F5F7]">
@@ -376,6 +360,36 @@ export default function ChapterPracticePage() {
           >
             Back to Level Chapters
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isListeningQuiz) {
+    return (
+      <div className="duo-shell min-h-screen">
+        <AppHeader />
+        <div className="mx-auto flex w-full max-w-3xl flex-col items-center justify-center gap-4 px-4 py-16 text-center">
+          <div className="duo-card w-full max-w-xl p-8">
+            <h1 className="text-2xl font-extrabold text-[#2c5015]">Listening Quiz (Dummy)</h1>
+            <p className="mt-2 text-sm text-[#4d6b3a]">
+              Listening quiz is not implemented yet. Please use Reading Quiz or Writing Quiz for this chapter.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <button
+                onClick={() => router.push(`/learn/${moduleId}?quizType=reading`)}
+                className="duo-btn-primary px-4 py-2 text-sm"
+              >
+                Go to Reading Quiz
+              </button>
+              <button
+                onClick={() => router.push(`/learn/${moduleId}?quizType=writing`)}
+                className="duo-btn-secondary px-4 py-2 text-sm"
+              >
+                Go to Writing Quiz
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -689,24 +703,20 @@ export default function ChapterPracticePage() {
             <div className="grid gap-4 lg:grid-cols-[1.05fr_1fr]">
               <div className="duo-card p-6 sm:p-8">
                 <p className="mb-4 text-center text-xs font-extrabold uppercase tracking-wide text-[#7f9f69] sm:text-sm">
-                  {quizPrompt}
+                  What does this word mean?
                 </p>
                 <h2 className="mb-3 text-center text-4xl font-extrabold tracking-tight text-[#2c5015] sm:text-5xl">
-                  {hideWordUntilAnswered ? "•••" : currentLesson.thaiWord}
+                  {currentLesson.thaiWord}
                 </h2>
                 <p className="mb-4 text-center text-base font-bold text-[#5a7c45] sm:text-lg">
-                  {hideWordUntilAnswered ? "Listen carefully" : currentLesson.phonetic}
+                  {currentLesson.phonetic}
                 </p>
                 <div className="flex justify-center">
                   <button
                     onClick={() => speakThai(currentLesson.thaiWord)}
                     className="rounded-full border border-[#bfe89f] bg-white px-3 py-1 text-xs font-extrabold text-[#3e7422]"
                   >
-                    {isSpeakingWord === currentLesson.thaiWord
-                      ? "Playing..."
-                      : isListeningQuiz
-                      ? "Play Again"
-                      : "Listen"}
+                    {isSpeakingWord === currentLesson.thaiWord ? "Playing..." : "Listen"}
                   </button>
                 </div>
               </div>
