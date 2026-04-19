@@ -5,7 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useMilestones } from "@/hooks/useMilestones";
 import AppHeader from "@/components/AppHeader";
 import { getChapterById } from "@/data/chapters";
-import { getNextChapterId, getModuleByChapterId } from "@/lib/modules";
+import { MODULES, getNextChapterId, getModuleByChapterId } from "@/lib/modules";
 import { getCharacterStrokeGuide } from "@/lib/strokes";
 import { playThaiAudio } from "@/lib/audio";
 
@@ -31,6 +31,70 @@ interface WritingResult {
   passed: boolean;
 }
 
+interface ChapterLesson {
+  id: string;
+  thaiWord: string;
+  phonetic: string;
+  englishTranslation: string;
+  options: string[];
+  correctOption: string;
+}
+
+function normalizeOptions(options: string[], correctOption: string): string[] {
+  const unique = Array.from(new Set([...options.filter(Boolean), correctOption]));
+  return unique.length > 0 ? unique : [correctOption];
+}
+
+function toChapterLesson(value: unknown): ChapterLesson | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const item = value as Record<string, unknown>;
+  const id = typeof item.id === "string" ? item.id.trim() : "";
+  const thaiWord = typeof item.thaiWord === "string" ? item.thaiWord.trim() : "";
+  const phonetic = typeof item.phonetic === "string" ? item.phonetic.trim() : "";
+  const englishTranslation =
+    typeof item.meaning === "string" ? item.meaning.trim() : "";
+
+  if (!id || !thaiWord || !phonetic || !englishTranslation) {
+    return null;
+  }
+
+  const options = Array.isArray(item.options)
+    ? item.options.filter((option): option is string => typeof option === "string")
+    : [];
+  const correctOption =
+    typeof item.correctOption === "string" && item.correctOption.trim()
+      ? item.correctOption.trim()
+      : englishTranslation;
+
+  return {
+    id,
+    thaiWord,
+    phonetic,
+    englishTranslation,
+    options: normalizeOptions(options, correctOption),
+    correctOption,
+  };
+}
+
+function toFallbackLessons(chapterId: string): ChapterLesson[] {
+  const chapter = getChapterById(chapterId);
+  if (!chapter) {
+    return [];
+  }
+
+  return chapter.lessons.map((lesson) => ({
+    id: lesson.id,
+    thaiWord: lesson.thaiWord,
+    phonetic: lesson.phonetic,
+    englishTranslation: lesson.englishTranslation,
+    options: normalizeOptions(lesson.options, lesson.correctOption),
+    correctOption: lesson.correctOption,
+  }));
+}
+
 export default function ChapterPracticePage() {
   const params = useParams();
   const moduleId = params?.moduleId as string;
@@ -53,17 +117,106 @@ export default function ChapterPracticePage() {
   const hasInkRef = useRef(false);
   const [writingResult, setWritingResult] = useState<WritingResult | null>(null);
   const [isSpeakingWord, setIsSpeakingWord] = useState<string | null>(null);
+  const [lessons, setLessons] = useState<ChapterLesson[]>([]);
+  const [isLoadingLessons, setIsLoadingLessons] = useState(true);
+  const [lessonsError, setLessonsError] = useState<string | null>(null);
 
   const { completeModule, completedMilestones } = useMilestones();
 
-  const chapter = useMemo(() => getChapterById(chapterId), [chapterId]);
+  const chapter = useMemo(() => {
+    const moduleData = MODULES.find((module) => module.id === moduleId);
+    const chapterData = moduleData?.chapters.find((item) => item.id === chapterId);
+    if (!moduleData || !chapterData) {
+      return null;
+    }
 
-  const lessons = chapter?.lessons ?? [];
+    return {
+      id: chapterData.id,
+      moduleId: moduleData.id,
+      title: chapterData.title,
+      order: chapterData.order,
+    };
+  }, [chapterId, moduleId]);
+
   const currentLesson = lessons[currentIndex] ?? null;
   const progress = lessons.length > 0 ? ((currentIndex + 1) / lessons.length) * 100 : 0;
   const characters = currentLesson?.thaiWord.split("") ?? [];
   const selectedCharacter = characters[currentCharIndex] ?? characters[0] ?? "";
   const strokeSteps = getCharacterStrokeGuide(selectedCharacter);
+
+  useEffect(() => {
+    if (!chapter || chapter.moduleId !== moduleId) {
+      return;
+    }
+
+    const controller = new AbortController();
+    const fallbackLessons = toFallbackLessons(chapterId);
+
+    setLessons(fallbackLessons);
+    setIsLoadingLessons(true);
+    setLessonsError(null);
+
+    const loadLessons = async () => {
+      try {
+        const params = new URLSearchParams({
+          moduleId,
+          chapterId,
+        });
+
+        const response = await fetch(`/api/vocabulary?${params.toString()}`, {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+
+        const payload = (await response.json()) as {
+          words?: unknown[];
+          error?: string;
+          warning?: string;
+          databaseUnavailable?: boolean;
+        };
+
+        if (!response.ok) {
+          throw new Error(payload.error ?? "Failed to load chapter words.");
+        }
+
+        const dbLessons = Array.isArray(payload.words)
+          ? payload.words
+              .map((word) => toChapterLesson(word))
+              .filter((word): word is ChapterLesson => word !== null)
+          : [];
+
+        if (dbLessons.length > 0) {
+          setLessons(dbLessons);
+          setLessonsError(null);
+          return;
+        }
+
+        if (payload.databaseUnavailable) {
+          setLessonsError(payload.warning ?? "Vocabulary backend is unavailable.");
+        }
+      } catch (error) {
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        setLessonsError(
+          error instanceof Error
+            ? error.message
+            : "Failed to load chapter words."
+        );
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoadingLessons(false);
+        }
+      }
+    };
+
+    loadLessons();
+
+    return () => {
+      controller.abort();
+    };
+  }, [chapter, chapterId, moduleId]);
 
   useEffect(() => {
     if (!chapter || chapter.moduleId !== moduleId) {
@@ -77,8 +230,19 @@ export default function ChapterPracticePage() {
     setIsCorrect(false);
     setWritingResult(null);
     setPracticeMode("quiz");
+    setCurrentCharIndex(0);
     setStrokeStepIndex(0);
   }, [chapter, moduleId, router]);
+
+  useEffect(() => {
+    setCurrentIndex(0);
+    setSelectedOption(null);
+    setIsAnswered(false);
+    setIsCorrect(false);
+    setWritingResult(null);
+    setCurrentCharIndex(0);
+    setStrokeStepIndex(0);
+  }, [chapterId, lessons.length]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -124,10 +288,37 @@ export default function ChapterPracticePage() {
     setStrokeStepIndex(0);
   }, [currentCharIndex]);
 
-  if (!chapter || chapter.moduleId !== moduleId || !currentLesson) {
+  if (!chapter || chapter.moduleId !== moduleId) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F5F5F7]">
         <div className="text-neutral-500">Loading chapter...</div>
+      </div>
+    );
+  }
+
+  if (isLoadingLessons && lessons.length === 0) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#F5F5F7]">
+        <div className="text-neutral-500">Loading chapter words...</div>
+      </div>
+    );
+  }
+
+  if (!currentLesson) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#F5F5F7] px-4">
+        <div className="w-full max-w-md rounded-3xl bg-white p-7 text-center shadow-[0_8px_30px_rgb(0,0,0,0.05)] sm:p-10">
+          <h1 className="text-2xl font-extrabold text-[#1D1D1F]">No words available</h1>
+          <p className="mt-2 text-sm text-neutral-600">
+            {lessonsError ?? "This chapter has no vocabulary in MongoDB yet."}
+          </p>
+          <button
+            onClick={() => router.push(`/learn/${moduleId}`)}
+            className="duo-btn-secondary mt-6 w-full px-4 py-3 text-sm"
+          >
+            Back to Level Chapters
+          </button>
+        </div>
       </div>
     );
   }

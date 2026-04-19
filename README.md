@@ -41,7 +41,9 @@ cp .env.example .env.local
 ```
 
 Required variables:
+
 - `MONGODB_URI` – Your MongoDB connection string
+- `MONGODB_DNS_SERVERS` – Optional DNS servers for SRV resolution issues (example: `8.8.8.8,1.1.1.1`)
 - `AUTH_SECRET` – A random secret string (generate with `openssl rand -base64 32`)
 - `AUTH_URL` – Your app URL (e.g., `http://localhost:3000`)
 - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` – From [Google Cloud Console](https://console.cloud.google.com/)
@@ -57,9 +59,19 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) to see the app.
 
+### 4. Import Level 1 writing vocabulary to MongoDB
+
+Level 1 writing vocabulary payload is provided in `src/data/seeds/level1-writing-vocabulary.json`.
+
+Use the import script (reads `MONGODB_URI` from your environment or `.env.local`):
+
+```bash
+npm run import:level1-writing-vocab
+```
+
 ## Project Structure
 
-```
+```text
 src/
 ├── app/
 │   ├── api/
@@ -88,7 +100,7 @@ src/
 ## API Routes
 
 | Method | Route | Description |
-|--------|-------|-------------|
+| ------ | ----- | ----------- |
 | `POST` | `/api/auth/register` | Register a new user |
 | `GET/POST` | `/api/auth/[...nextauth]` | NextAuth.js handlers |
 | `GET` | `/api/auth/verify-email` | Verify email token |
