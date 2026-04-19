@@ -4,13 +4,15 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useMilestones } from "@/hooks/useMilestones";
 import AppHeader from "@/components/AppHeader";
+import BackToPreviousButton from "@/components/BackToPreviousButton";
 import { getChapterById } from "@/data/chapters";
 import { MODULES, getNextChapterId, getModuleByChapterId } from "@/lib/modules";
-import { getCharacterStrokeGuide } from "@/lib/strokes";
+import {
+  evaluateWritingCanvas,
+  type WritingResult,
+} from "@/lib/writing-evaluator";
 import { playThaiAudio } from "@/lib/audio";
 
-type PracticeMode = "quiz" | "writing";
-type WritingSection = "learn" | "quiz";
 type QuizTrack = "reading" | "listening" | "writing";
 
 function normalizeQuizTrack(value: string | null): QuizTrack {
@@ -18,26 +20,6 @@ function normalizeQuizTrack(value: string | null): QuizTrack {
     return value;
   }
   return "reading";
-}
-
-// Writing evaluation thresholds — adjust these to tune difficulty.
-const WRITING_THRESHOLDS = {
-  /** Fraction of the template character that must be covered by user strokes. */
-  coverage: 0.24,
-  /** Fraction of user strokes that must fall on the template character. */
-  precision: 0.20,
-  /** How close the user's ink density is to the template (1 = perfect). */
-  legibility: 0.45,
-  /** Weighted composite score: coverage×0.64 + precision×0.26 + legibility×0.10. */
-  score: 0.32,
-} as const;
-
-interface WritingResult {
-  score: number;
-  coverage: number;
-  precision: number;
-  legibility: number;
-  passed: boolean;
 }
 
 interface ChapterLesson {
@@ -116,12 +98,7 @@ export default function ChapterPracticePage() {
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const [practiceMode, setPracticeMode] = useState<PracticeMode>("quiz");
-  const [writingSection, setWritingSection] = useState<WritingSection>("learn");
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [currentCharIndex, setCurrentCharIndex] = useState(0);
-  const [strokeStepIndex, setStrokeStepIndex] = useState(0);
-  const [completedCharIndexes, setCompletedCharIndexes] = useState<number[]>([]);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
@@ -154,30 +131,7 @@ export default function ChapterPracticePage() {
 
   const currentLesson = lessons[currentIndex] ?? null;
   const progress = lessons.length > 0 ? ((currentIndex + 1) / lessons.length) * 100 : 0;
-  const characters = useMemo(
-    () => (currentLesson?.thaiWord ? currentLesson.thaiWord.split("") : []),
-    [currentLesson?.thaiWord]
-  );
-  const selectedCharacter = characters[currentCharIndex] ?? characters[0] ?? "";
-  const strokeSteps = getCharacterStrokeGuide(selectedCharacter);
   const selectedTrackLabel = isWritingTrack ? "WRITING QUIZ" : "READING QUIZ";
-  const firstIncompleteCharIndex = useMemo(() => {
-    if (characters.length === 0) {
-      return 0;
-    }
-
-    const completed = new Set(completedCharIndexes);
-    for (let i = 0; i < characters.length; i += 1) {
-      if (!completed.has(i)) {
-        return i;
-      }
-    }
-
-    return characters.length - 1;
-  }, [characters, completedCharIndexes]);
-  const isLearningWordComplete =
-    characters.length > 0 &&
-    characters.every((_, index) => completedCharIndexes.includes(index));
 
   useEffect(() => {
     if (!chapter || chapter.moduleId !== moduleId) {
@@ -264,12 +218,7 @@ export default function ChapterPracticePage() {
     setIsAnswered(false);
     setIsCorrect(false);
     setWritingResult(null);
-    setPracticeMode(isWritingTrack ? "writing" : "quiz");
-    setWritingSection(isWritingTrack ? "quiz" : "learn");
-    setCompletedCharIndexes([]);
     setHasInk(false);
-    setCurrentCharIndex(0);
-    setStrokeStepIndex(0);
   }, [chapter, isWritingTrack, moduleId, quizTrack, router]);
 
   useEffect(() => {
@@ -278,17 +227,12 @@ export default function ChapterPracticePage() {
     setIsAnswered(false);
     setIsCorrect(false);
     setWritingResult(null);
-    setPracticeMode(isWritingTrack ? "writing" : "quiz");
-    setWritingSection(isWritingTrack ? "quiz" : "learn");
-    setCompletedCharIndexes([]);
     setHasInk(false);
-    setCurrentCharIndex(0);
-    setStrokeStepIndex(0);
   }, [chapterId, isWritingTrack, lessons.length]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
-    if (practiceMode !== "writing") return;
+    if (!isWritingTrack) return;
 
     const canvas = canvasRef.current;
     const ratio = window.devicePixelRatio || 1;
@@ -310,7 +254,7 @@ export default function ChapterPracticePage() {
     ctx.clearRect(0, 0, width, height);
     setHasInk(false);
     setWritingResult(null);
-  }, [practiceMode, currentIndex, writingSection]);
+  }, [isWritingTrack, currentIndex]);
 
   useEffect(() => {
     return () => {
@@ -319,16 +263,6 @@ export default function ChapterPracticePage() {
       }
     };
   }, []);
-
-  useEffect(() => {
-    setCurrentCharIndex(0);
-    setStrokeStepIndex(0);
-    setCompletedCharIndexes([]);
-  }, [currentIndex]);
-
-  useEffect(() => {
-    setStrokeStepIndex(0);
-  }, [currentCharIndex]);
 
   if (!chapter || chapter.moduleId !== moduleId) {
     return (
@@ -370,6 +304,11 @@ export default function ChapterPracticePage() {
       <div className="duo-shell min-h-screen">
         <AppHeader />
         <div className="mx-auto flex w-full max-w-3xl flex-col items-center justify-center gap-4 px-4 py-16 text-center">
+          <div className="w-full text-left">
+            <BackToPreviousButton
+              fallbackHref={`/learn/${moduleId}?quizType=${quizTrack}`}
+            />
+          </div>
           <div className="duo-card w-full max-w-xl p-8">
             <h1 className="text-2xl font-extrabold text-[#2c5015]">Listening Quiz (Dummy)</h1>
             <p className="mt-2 text-sm text-[#4d6b3a]">
@@ -451,97 +390,17 @@ export default function ChapterPracticePage() {
     checkWriting();
   };
 
-  const goToCharacterInOrder = (index: number) => {
-    if (index > firstIncompleteCharIndex) {
-      return;
-    }
-
-    setCurrentCharIndex(index);
-    setStrokeStepIndex(0);
-    clearCanvas();
-  };
-
-  const completeLearnStroke = () => {
-    if (!hasInk) {
-      return;
-    }
-
-    const isLastStroke = strokeStepIndex >= strokeSteps.length - 1;
-
-    if (!isLastStroke) {
-      setStrokeStepIndex((prev) => prev + 1);
-      clearCanvas();
-      return;
-    }
-
-    setCompletedCharIndexes((prev) =>
-      prev.includes(currentCharIndex) ? prev : [...prev, currentCharIndex]
-    );
-
-    if (currentCharIndex < characters.length - 1) {
-      setCurrentCharIndex((prev) => prev + 1);
-      setStrokeStepIndex(0);
-    }
-
-    clearCanvas();
-  };
-
   const checkWriting = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const userCtx = canvas.getContext("2d");
-    if (!userCtx) return;
-
-    const width = canvas.width;
-    const height = canvas.height;
-    const userData = userCtx.getImageData(0, 0, width, height).data;
-
-    const templateCanvas = document.createElement("canvas");
-    templateCanvas.width = width;
-    templateCanvas.height = height;
-    const templateCtx = templateCanvas.getContext("2d");
-    if (!templateCtx) return;
-
-    const ratio = window.devicePixelRatio || 1;
-    const logicalWidth = width / ratio;
-    const logicalHeight = height / ratio;
-    templateCtx.scale(ratio, ratio);
-    templateCtx.clearRect(0, 0, logicalWidth, logicalHeight);
-    templateCtx.fillStyle = "#0b2f18";
-    templateCtx.textAlign = "center";
-    templateCtx.textBaseline = "middle";
-    const fontSize = Math.min(logicalWidth / 2.4, logicalHeight * 0.52);
-    templateCtx.font = `700 ${fontSize}px \"Noto Sans Thai\", \"Sarabun\", sans-serif`;
-    templateCtx.fillText(currentLesson.thaiWord, logicalWidth / 2, logicalHeight / 2);
-
-    const templateData = templateCtx.getImageData(0, 0, width, height).data;
-
-    let targetPixels = 0;
-    let userPixels = 0;
-    let overlapPixels = 0;
-
-    for (let i = 3; i < userData.length; i += 4) {
-      const userInk = userData[i] > 24;
-      const targetInk = templateData[i] > 24;
-
-      if (targetInk) targetPixels += 1;
-      if (userInk) userPixels += 1;
-      if (userInk && targetInk) overlapPixels += 1;
-    }
-
-    const coverage = targetPixels > 0 ? overlapPixels / targetPixels : 0;
-    const precision = userPixels > 0 ? overlapPixels / userPixels : 0;
-    const density = targetPixels > 0 ? userPixels / targetPixels : 0;
-    const legibility = Math.max(0, 1 - Math.max(0, Math.abs(1 - density)));
-    const score = coverage * 0.64 + precision * 0.26 + legibility * 0.1;
-    const passed =
-      coverage >= WRITING_THRESHOLDS.coverage &&
-      precision >= WRITING_THRESHOLDS.precision &&
-      legibility >= WRITING_THRESHOLDS.legibility &&
-      score >= WRITING_THRESHOLDS.score;
-
-    setWritingResult({ score, coverage, precision, legibility, passed });
+    setWritingResult(
+      evaluateWritingCanvas({
+        canvas,
+        hasInk,
+        targetText: currentLesson.thaiWord,
+      })
+    );
   };
 
   const goToWord = (index: number) => {
@@ -550,7 +409,6 @@ export default function ChapterPracticePage() {
     setIsAnswered(false);
     setIsCorrect(false);
     setWritingResult(null);
-    setStrokeStepIndex(0);
   };
 
   const handlePrevWord = () => {
@@ -638,6 +496,9 @@ export default function ChapterPracticePage() {
   return (
     <div className="duo-shell min-h-screen">
       <AppHeader />
+      <div className="mx-auto w-full max-w-6xl px-4 pt-4 sm:px-6">
+        <BackToPreviousButton fallbackHref={`/learn/${moduleId}?quizType=${quizTrack}`} />
+      </div>
       <div className="border-b-2 border-[#d7f4c9] bg-[#f6ffef]/95">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
           <div>
@@ -666,25 +527,6 @@ export default function ChapterPracticePage() {
       </div>
 
       <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-        <div className="mb-5 grid grid-cols-2 gap-2 rounded-2xl border border-[#d7f4c9] bg-[#f8ffef] p-2 sm:max-w-xs">
-          <button
-            onClick={() => setPracticeMode("quiz")}
-            className={`rounded-xl px-3 py-2 text-xs font-extrabold transition-colors sm:text-sm ${
-              practiceMode === "quiz" ? "bg-[#58cc02] text-white" : "bg-white text-[#4d6b3a]"
-            }`}
-          >
-            {isListeningQuiz ? "Listening" : "Reading"}
-          </button>
-          <button
-            onClick={() => setPracticeMode("writing")}
-            className={`rounded-xl px-3 py-2 text-xs font-extrabold transition-colors sm:text-sm ${
-              practiceMode === "writing" ? "bg-[#58cc02] text-white" : "bg-white text-[#4d6b3a]"
-            }`}
-          >
-            Writing
-          </button>
-        </div>
-
         <div className="mb-5 flex justify-end">
           <button
             onClick={() =>
@@ -698,7 +540,7 @@ export default function ChapterPracticePage() {
           </button>
         </div>
 
-        {practiceMode === "quiz" ? (
+        {!isWritingTrack ? (
           <>
             <div className="grid gap-4 lg:grid-cols-[1.05fr_1fr]">
               <div className="duo-card p-6 sm:p-8">
@@ -770,67 +612,24 @@ export default function ChapterPracticePage() {
           </>
         ) : null}
 
-        {practiceMode === "writing" ? (
+        {isWritingTrack ? (
           <div className="mx-auto max-w-4xl space-y-4">
-            <div className="grid grid-cols-2 gap-2 rounded-2xl border border-[#d7f4c9] bg-[#f8ffef] p-2 sm:max-w-xs">
-              <button
-                onClick={() => {
-                  setWritingSection("learn");
-                  setCompletedCharIndexes([]);
-                  setCurrentCharIndex(0);
-                  setStrokeStepIndex(0);
-                  clearCanvas();
-                }}
-                className={`rounded-xl px-3 py-2 text-xs font-extrabold transition-colors sm:text-sm ${
-                  writingSection === "learn"
-                    ? "bg-[#58cc02] text-white"
-                    : "bg-white text-[#4d6b3a]"
-                }`}
-              >
-                Learn Strokes
-              </button>
-              <button
-                onClick={() => {
-                  setWritingSection("quiz");
-                  clearCanvas();
-                }}
-                className={`rounded-xl px-3 py-2 text-xs font-extrabold transition-colors sm:text-sm ${
-                  writingSection === "quiz"
-                    ? "bg-[#58cc02] text-white"
-                    : "bg-white text-[#4d6b3a]"
-                }`}
-              >
-                Writing Quiz
-              </button>
-            </div>
-
-            {/* Word info bar */}
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#d7f4c9] bg-white px-5 py-4">
               <div className="flex items-baseline gap-3">
                 <span className="text-4xl font-extrabold text-[#2c5015]">{currentLesson.thaiWord}</span>
                 <span className="text-base font-bold text-[#5a7c45]">{currentLesson.phonetic}</span>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                {characters.length > 1 && characters.map((char, index) => (
-                  <button
-                    key={`${char}-${index}`}
-                    onClick={() =>
-                      writingSection === "learn"
-                        ? goToCharacterInOrder(index)
-                        : setCurrentCharIndex(index)
-                    }
-                    disabled={writingSection === "learn" && index > firstIncompleteCharIndex}
-                    className={`h-9 w-9 rounded-xl text-lg font-extrabold transition-colors ${
-                      index === currentCharIndex
-                        ? "bg-[#58cc02] text-white"
-                        : writingSection === "learn" && completedCharIndexes.includes(index)
-                        ? "bg-[#e9fdd6] text-[#2c5015]"
-                        : "bg-[#f0fae6] text-[#2c5015] hover:bg-[#d7f4c9]"
-                    } disabled:cursor-not-allowed disabled:opacity-50`}
-                  >
-                    {char}
-                  </button>
-                ))}
+                {currentLesson.thaiWord.length > 1
+                  ? currentLesson.thaiWord.split("").map((char, index) => (
+                      <span
+                        key={`${char}-${index}`}
+                        className="h-9 w-9 rounded-xl bg-[#f0fae6] text-center text-lg font-extrabold leading-9 text-[#2c5015]"
+                      >
+                        {char}
+                      </span>
+                    ))
+                  : null}
                 <button
                   onClick={() => speakThai(currentLesson.thaiWord)}
                   className="rounded-full border border-[#bfe89f] bg-[#f6ffef] px-4 py-1.5 text-xs font-extrabold text-[#3e7422] hover:bg-[#e5f9d0]"
@@ -840,182 +639,96 @@ export default function ChapterPracticePage() {
               </div>
             </div>
 
-            {/* Canvas + stroke guide */}
-            <div
-              className={`grid gap-4 ${
-                writingSection === "learn" ? "lg:grid-cols-[1fr_280px]" : ""
-              }`}
-            >
-              {/* Drawing canvas card */}
-              <div className="overflow-hidden rounded-3xl border-2 border-[#d7f4c9] bg-white">
-                <div className="relative aspect-square w-full">
-                  {/* Guideline grid */}
-                  <div className="pointer-events-none absolute inset-0">
-                    <div className="absolute inset-x-0 top-1/2 h-px bg-[#d7f4c9]" />
-                    <div className="absolute inset-y-0 left-1/2 w-px bg-[#d7f4c9]" />
-                    <div className="absolute inset-x-0 top-1/4 h-px bg-[#edfbe1]" />
-                    <div className="absolute inset-x-0 top-3/4 h-px bg-[#edfbe1]" />
-                    <div className="absolute inset-y-0 left-1/4 w-px bg-[#edfbe1]" />
-                    <div className="absolute inset-y-0 left-3/4 w-px bg-[#edfbe1]" />
-                  </div>
-                  {/* Ghost character */}
-                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                    <span
-                      className="select-none font-extrabold leading-none text-[#2c5015]/10"
-                      style={{ fontSize: "clamp(80px, 18vmin, 180px)" }}
-                    >
-                      {writingSection === "learn" ? selectedCharacter : currentLesson.thaiWord}
-                    </span>
-                  </div>
-                  <canvas
-                    ref={canvasRef}
-                    onPointerDown={beginDrawing}
-                    onPointerMove={draw}
-                    onPointerUp={stopDrawing}
-                    onPointerLeave={stopDrawing}
-                    className="absolute inset-0 h-full w-full touch-none"
-                  />
+            <div className="overflow-hidden rounded-3xl border-2 border-[#d7f4c9] bg-white">
+              <div className="relative aspect-square w-full">
+                <div className="pointer-events-none absolute inset-0">
+                  <div className="absolute inset-x-0 top-1/2 h-px bg-[#d7f4c9]" />
+                  <div className="absolute inset-y-0 left-1/2 w-px bg-[#d7f4c9]" />
+                  <div className="absolute inset-x-0 top-1/4 h-px bg-[#edfbe1]" />
+                  <div className="absolute inset-x-0 top-3/4 h-px bg-[#edfbe1]" />
+                  <div className="absolute inset-y-0 left-1/4 w-px bg-[#edfbe1]" />
+                  <div className="absolute inset-y-0 left-3/4 w-px bg-[#edfbe1]" />
                 </div>
-
-                {/* Result / hint bar below canvas */}
-                {writingSection === "learn" ? (
-                  <div className="flex items-center justify-between gap-3 border-t border-[#e8f9db] bg-[#fbfffa] px-5 py-3">
-                    <div>
-                      <p className="text-sm font-extrabold text-[#2c5015]">
-                        Stroke {Math.min(strokeStepIndex + 1, strokeSteps.length)} of {strokeSteps.length}
-                      </p>
-                      <p className="text-xs text-[#6f8f58]">
-                        {strokeSteps[Math.min(strokeStepIndex, strokeSteps.length - 1)]}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={clearCanvas}
-                        className="rounded-full border border-neutral-200 bg-white px-4 py-1.5 text-xs font-bold text-neutral-600 hover:bg-neutral-50"
-                      >
-                        Clear
-                      </button>
-                      <button
-                        onClick={completeLearnStroke}
-                        disabled={!hasInk || isLearningWordComplete}
-                        className="duo-btn-primary px-4 py-1.5 text-xs disabled:opacity-50"
-                      >
-                        {strokeStepIndex >= strokeSteps.length - 1
-                          ? "Finish Character"
-                          : "Next Stroke"}
-                      </button>
-                    </div>
-                  </div>
-                ) : writingResult ? (
-                  <div
-                    className={`flex items-center justify-between gap-3 border-t px-5 py-3 ${
-                      writingResult.passed
-                        ? "border-[#bbf7d0] bg-[#f0fdf4]"
-                        : "border-[#fed7aa] bg-[#fff7ed]"
-                    }`}
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                  <span
+                    className="select-none font-extrabold leading-none text-[#2c5015]/10"
+                    style={{ fontSize: "clamp(80px, 18vmin, 180px)" }}
                   >
-                    <div>
-                      <p className={`text-sm font-extrabold ${writingResult.passed ? "text-[#16a34a]" : "text-[#d97706]"}`}>
-                        {writingResult.passed ? "Good shape!" : "Keep practicing"}
-                      </p>
-                      <p className="text-xs text-neutral-400">
-                        Score {Math.round(writingResult.score * 100)}% · Coverage {Math.round(writingResult.coverage * 100)}% · Precision {Math.round(writingResult.precision * 100)}%
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={clearCanvas}
-                        className="rounded-full border border-neutral-200 bg-white px-4 py-1.5 text-xs font-bold text-neutral-600 hover:bg-neutral-50"
-                      >
-                        Try Again
-                      </button>
-                      {writingResult.passed && (
-                        <button
-                          onClick={handleNextWord}
-                          disabled={currentIndex + 1 >= lessons.length}
-                          className="duo-btn-primary px-4 py-1.5 text-xs disabled:opacity-50"
-                        >
-                          Next Word →
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between border-t border-[#e8f9db] bg-[#fbfffa] px-5 py-3">
-                    <p className="text-xs text-neutral-400">
-                      {isDrawing
-                        ? "Drawing…"
-                        : "Write the full word naturally, then check pixel recognition."}
+                    {currentLesson.thaiWord}
+                  </span>
+                </div>
+                <canvas
+                  ref={canvasRef}
+                  onPointerDown={beginDrawing}
+                  onPointerMove={draw}
+                  onPointerUp={stopDrawing}
+                  onPointerLeave={stopDrawing}
+                  className="absolute inset-0 h-full w-full touch-none"
+                />
+              </div>
+
+              {writingResult ? (
+                <div
+                  className={`flex items-center justify-between gap-3 border-t px-5 py-3 ${
+                    writingResult.passed
+                      ? "border-[#bbf7d0] bg-[#f0fdf4]"
+                      : "border-[#fed7aa] bg-[#fff7ed]"
+                  }`}
+                >
+                  <div>
+                    <p className={`text-sm font-extrabold ${writingResult.passed ? "text-[#16a34a]" : "text-[#d97706]"}`}>
+                      {writingResult.passed ? "Good shape!" : "Keep practicing"}
                     </p>
-                    <div className="flex gap-2">
+                    <p className="text-xs text-neutral-400">
+                      Score {Math.round(writingResult.score * 100)}% · Coverage {Math.round(writingResult.coverage * 100)}% · Precision {Math.round(writingResult.precision * 100)}%
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={clearCanvas}
+                      className="rounded-full border border-neutral-200 bg-white px-4 py-1.5 text-xs font-bold text-neutral-600 hover:bg-neutral-50"
+                    >
+                      Try Again
+                    </button>
+                    {writingResult.passed && (
                       <button
-                        onClick={clearCanvas}
-                        className="rounded-full border border-neutral-200 bg-white px-4 py-1.5 text-xs font-bold text-neutral-500 hover:bg-neutral-50"
-                      >
-                        Clear
-                      </button>
-                      <button
-                        onClick={handleCheckWriting}
-                        disabled={!hasInk}
+                        onClick={handleNextWord}
+                        disabled={currentIndex + 1 >= lessons.length}
                         className="duo-btn-primary px-4 py-1.5 text-xs disabled:opacity-50"
                       >
-                        Check Accuracy
+                        Next Word →
                       </button>
-                    </div>
+                    )}
                   </div>
-                )}
-              </div>
-
-              {writingSection === "learn" ? (
-                <div className="rounded-3xl border border-[#d7f4c9] bg-[#f8fff4] p-4">
-                  <p className="mb-3 text-xs font-extrabold uppercase tracking-widest text-[#7f9f69]">
-                    Stroke Order Learning
-                  </p>
-                  <div className="mb-4 flex items-center justify-center rounded-2xl bg-white py-5 shadow-sm">
-                    <span className="text-7xl font-extrabold text-[#2c5015]">{selectedCharacter}</span>
-                  </div>
-                  <div className="space-y-2">
-                    {strokeSteps.map((step, index) => (
-                      <div
-                        key={`${selectedCharacter}-${index}`}
-                        className={`flex w-full items-start gap-2.5 rounded-xl px-3 py-2.5 text-left text-xs ${
-                          index === strokeStepIndex
-                            ? "bg-[#58cc02] text-white"
-                            : index < strokeStepIndex
-                            ? "bg-[#e9fdd6] text-[#2c5015]"
-                            : "border border-neutral-100 bg-white text-neutral-400"
-                        }`}
-                      >
-                        <span className="shrink-0 font-extrabold">{index + 1}.</span>
-                        <span className={index === strokeStepIndex ? "font-bold" : ""}>{step}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="mt-3 text-xs text-[#8aad73]">
-                    Follow each stroke in order. Complete one stroke before moving to the next.
-                  </p>
-                  <p className="mt-1 text-xs font-bold text-[#5c8046]">
-                    Character progress: {completedCharIndexes.length}/{characters.length}
-                  </p>
                 </div>
-              ) : null}
+              ) : (
+                <div className="flex items-center justify-between border-t border-[#e8f9db] bg-[#fbfffa] px-5 py-3">
+                  <p className="text-xs text-neutral-400">
+                    {isDrawing ? "Drawing…" : "Write the full word naturally, then check accuracy."}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={clearCanvas}
+                      className="rounded-full border border-neutral-200 bg-white px-4 py-1.5 text-xs font-bold text-neutral-500 hover:bg-neutral-50"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      onClick={handleCheckWriting}
+                      disabled={!hasInk}
+                      className="duo-btn-primary px-4 py-1.5 text-xs disabled:opacity-50"
+                    >
+                      Check Accuracy
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-
-            {writingSection === "learn" && isLearningWordComplete ? (
-              <div className="rounded-2xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3">
-                <p className="text-sm font-extrabold text-[#166534]">
-                  Stroke-order learning complete for this word.
-                </p>
-                <p className="text-xs text-[#26724f]">
-                  Continue to the next word, or switch to Writing Quiz to check pixel-level recognition.
-                </p>
-              </div>
-            ) : null}
           </div>
         ) : null}
       </div>
 
-      {practiceMode === "writing" ? (
+      {isWritingTrack ? (
         <div className="sticky bottom-0 left-0 right-0 border-t-2 border-[#d7f4c9] bg-[#f6ffef]/95 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 sm:px-6">
           <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3">
             <button
@@ -1026,15 +739,15 @@ export default function ChapterPracticePage() {
               Previous Word
             </button>
             <button
-              onClick={handleNextWord}
-              disabled={
-                currentIndex + 1 >= lessons.length ||
-                (writingSection === "learn" && !isLearningWordComplete)
+              onClick={() =>
+                currentIndex + 1 >= lessons.length ? handleNextQuiz() : handleNextWord()
               }
               className="duo-btn-primary px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {writingSection === "learn" && !isLearningWordComplete
-                ? "Finish Strokes First"
+              {currentIndex + 1 >= lessons.length
+                ? savingCompletion
+                  ? "Saving..."
+                  : "Complete Chapter"
                 : "Next Word"}
             </button>
           </div>

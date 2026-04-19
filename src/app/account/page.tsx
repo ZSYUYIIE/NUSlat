@@ -9,6 +9,7 @@ import {
   getCompletedChapterCountByModule,
 } from "@/lib/modules";
 import { useMilestones } from "@/hooks/useMilestones";
+import BackToPreviousButton from "@/components/BackToPreviousButton";
 
 export default function AccountPage() {
   const router = useRouter();
@@ -34,6 +35,8 @@ export default function AccountPage() {
     <div className="duo-shell min-h-screen">
       <AppHeader />
       <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
+        <BackToPreviousButton fallbackHref="/" className="mb-4" />
+
         <h1 className="text-2xl font-extrabold tracking-tight text-[#2c5015] sm:text-4xl">
           Account
         </h1>

@@ -9,6 +9,7 @@ import {
   getChapterSequence,
 } from "@/lib/modules";
 import ModuleCard from "@/components/ModuleCard";
+import BackToPreviousButton from "@/components/BackToPreviousButton";
 import { useMilestones } from "@/hooks/useMilestones";
 
 type QuizTrack = "reading" | "listening" | "writing";
@@ -86,6 +87,8 @@ export default function Dashboard() {
       )}
 
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
+        <BackToPreviousButton fallbackHref="/" className="mb-4" />
+
         {/* Welcome */}
         <div className="mb-8 text-center sm:mb-10">
           <h1 className="text-2xl font-extrabold tracking-tight text-[#2c5015] sm:text-4xl">

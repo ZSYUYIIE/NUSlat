@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState, useEffect, useCallback, useId } from "react";
-import { evaluateWritingCanvas, type WritingResult } from "@/lib/writing-evaluator";
+import { useRef, useState, useEffect, useCallback, useId, useMemo } from "react";
+import { getCharacterStrokeGuide } from "@/lib/strokes";
 
 interface Props {
   thaiWord: string;
@@ -17,9 +17,33 @@ export default function WriteModal({ thaiWord, phonetic, meaning, onClose }: Pro
   const titleId = useId();
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasInk, setHasInk] = useState(false);
-  const [writingResult, setWritingResult] = useState<WritingResult | null>(null);
-  const defaultFontSize = Math.max(2, 10 / thaiWord.length);
-  const [fontSize, setFontSize] = useState(defaultFontSize);
+  const [currentCharIndex, setCurrentCharIndex] = useState(0);
+  const [strokeStepIndex, setStrokeStepIndex] = useState(0);
+  const [completedCharIndexes, setCompletedCharIndexes] = useState<number[]>([]);
+
+  const characters = useMemo(() => thaiWord.split(""), [thaiWord]);
+  const selectedCharacter = characters[currentCharIndex] ?? characters[0] ?? thaiWord;
+  const strokeSteps = useMemo(
+    () => getCharacterStrokeGuide(selectedCharacter),
+    [selectedCharacter]
+  );
+  const firstIncompleteCharIndex = useMemo(() => {
+    if (characters.length === 0) {
+      return 0;
+    }
+
+    const completed = new Set(completedCharIndexes);
+    for (let i = 0; i < characters.length; i += 1) {
+      if (!completed.has(i)) {
+        return i;
+      }
+    }
+
+    return characters.length - 1;
+  }, [characters, completedCharIndexes]);
+  const isLearningWordComplete =
+    characters.length > 0 &&
+    characters.every((_, index) => completedCharIndexes.includes(index));
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -77,20 +101,42 @@ export default function WriteModal({ thaiWord, phonetic, meaning, onClose }: Pro
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     setHasInk(false);
-    setWritingResult(null);
   }, []);
 
-  const checkWriting = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    setWritingResult(
-      evaluateWritingCanvas({
-        canvas,
-        hasInk,
-        targetText: thaiWord,
-      })
+  const goToCharacterInOrder = (index: number) => {
+    if (index > firstIncompleteCharIndex) {
+      return;
+    }
+
+    setCurrentCharIndex(index);
+    setStrokeStepIndex(0);
+    clearCanvas();
+  };
+
+  const completeLearnStroke = () => {
+    if (!hasInk || strokeSteps.length === 0) {
+      return;
+    }
+
+    const isLastStroke = strokeStepIndex >= strokeSteps.length - 1;
+
+    if (!isLastStroke) {
+      setStrokeStepIndex((prev) => prev + 1);
+      clearCanvas();
+      return;
+    }
+
+    setCompletedCharIndexes((prev) =>
+      prev.includes(currentCharIndex) ? prev : [...prev, currentCharIndex]
     );
-  }, [hasInk, thaiWord]);
+
+    if (currentCharIndex < characters.length - 1) {
+      setCurrentCharIndex((prev) => prev + 1);
+      setStrokeStepIndex(0);
+    }
+
+    clearCanvas();
+  };
 
   // Close on backdrop click
   const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -157,7 +203,7 @@ export default function WriteModal({ thaiWord, phonetic, meaning, onClose }: Pro
         <div className="flex items-center justify-between gap-3 border-b border-[#d7f4c9] bg-white px-5 py-4">
           <div>
             <h2 id={titleId} className="text-sm font-extrabold tracking-tight text-[#2c5015]">
-              Practice Writing
+              Learn Strokes
             </h2>
             <p className="mt-0.5 text-xs text-[#6a8a55]">
               {thaiWord}
@@ -185,87 +231,114 @@ export default function WriteModal({ thaiWord, phonetic, meaning, onClose }: Pro
         <div>
           {/* Canvas panel */}
           <div className="bg-[#184f2b] p-5 sm:rounded-b-3xl">
-            {/* Drawing area */}
-            <div className="relative mb-3 h-72 w-full overflow-hidden rounded-2xl border-2 border-[#3c8d52] bg-[#0f3f22]">
-              {/* Watermark */}
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-3">
-                <span
-                  className="select-none whitespace-nowrap font-extrabold text-[#2c7c40]/60"
-                  style={{ fontSize: `${fontSize}rem` }}
-                >
-                  {thaiWord}
-                </span>
-              </div>
-              <canvas
-                ref={canvasRef}
-                onPointerDown={beginDrawing}
-                onPointerMove={draw}
-                onPointerUp={stopDrawing}
-                onPointerLeave={stopDrawing}
-                className="absolute inset-0 h-full w-full touch-none"
-              />
-            </div>
-
-            {/* Controls */}
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <button
-                onClick={clearCanvas}
-                className="rounded-full border border-[#3f9155] bg-[#0f3f22] px-3 py-1.5 text-xs font-bold text-[#d7f8cd]"
-              >
-                Clear
-              </button>
-              <button
-                onClick={checkWriting}
-                disabled={!hasInk}
-                className="rounded-full border border-[#97de9f] bg-[#c6f7b8] px-3 py-1.5 text-xs font-extrabold text-[#1a582d] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Check Accuracy
-              </button>
-
-              <div className="ml-auto flex items-center gap-1">
-                <span className="text-[10px] font-bold text-[#b9e8c0]">Size</span>
-                <button
-                  onClick={() => setFontSize((s) => Math.max(1, parseFloat((s - 0.5).toFixed(1))))}
-                  className="flex h-6 w-6 items-center justify-center rounded-full border border-[#3f9155] bg-[#0f3f22] text-sm font-bold text-[#d7f8cd] hover:bg-[#1a5c32]"
-                  aria-label="Decrease font size"
-                >
-                  −
-                </button>
-                <button
-                  onClick={() => setFontSize((s) => Math.min(10, parseFloat((s + 0.5).toFixed(1))))}
-                  className="flex h-6 w-6 items-center justify-center rounded-full border border-[#97de9f] bg-[#c6f7b8] text-sm font-extrabold text-[#1a582d] hover:bg-[#b3f0a0]"
-                  aria-label="Increase font size"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {/* Result */}
-            {writingResult ? (
-              <div
-                className={`rounded-xl border px-3 py-2 text-xs ${
-                  writingResult.passed
-                    ? "border-[#8fe1a0] bg-[#0f5b2d] text-[#ddffe7]"
-                    : "border-[#f1c37d] bg-[#6d4a1f] text-[#fff4db]"
-                }`}
-              >
-                <p className="font-extrabold">
-                  {writingResult.passed
-                    ? "Readable — great job!"
-                    : "Keep practising — follow the stroke order."}
-                </p>
-                <p className="mt-1 text-[11px] opacity-80">
-                  Score {Math.round(writingResult.score * 100)}% &bull;{" "}
-                  Coverage {Math.round(writingResult.coverage * 100)}% &bull;{" "}
-                  Precision {Math.round(writingResult.precision * 100)}%
+            <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+              <div>
+                <p className="text-2xl font-extrabold text-[#ddffe7]">{thaiWord}</p>
+                <p className="text-xs font-bold text-[#b9e8c0]">
+                  {phonetic}
+                  {meaning ? ` · ${meaning}` : ""}
                 </p>
               </div>
-            ) : (
-              <p className="text-xs text-[#b9e8c0]">
-                Trace the character above, then tap Check Accuracy.
-              </p>
-            )}
+              {characters.length > 1 ? (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {characters.map((char, index) => (
+                    <button
+                      key={`${char}-${index}`}
+                      onClick={() => goToCharacterInOrder(index)}
+                      disabled={index > firstIncompleteCharIndex}
+                      className={`h-8 w-8 rounded-lg text-base font-extrabold transition-colors ${
+                        index === currentCharIndex
+                          ? "bg-[#58cc02] text-white"
+                          : completedCharIndexes.includes(index)
+                          ? "bg-[#b8ef99] text-[#184f2b]"
+                          : "bg-[#0f3f22] text-[#d7f8cd]"
+                      } disabled:cursor-not-allowed disabled:opacity-50`}
+                    >
+                      {char}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-[1fr_250px]">
+              <div>
+                <div className="relative mb-3 h-72 w-full overflow-hidden rounded-2xl border-2 border-[#3c8d52] bg-[#0f3f22]">
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-3">
+                    <span
+                      className="select-none whitespace-nowrap font-extrabold text-[#2c7c40]/60"
+                      style={{ fontSize: "8rem" }}
+                    >
+                      {selectedCharacter}
+                    </span>
+                  </div>
+                  <canvas
+                    ref={canvasRef}
+                    onPointerDown={beginDrawing}
+                    onPointerMove={draw}
+                    onPointerUp={stopDrawing}
+                    onPointerLeave={stopDrawing}
+                    className="absolute inset-0 h-full w-full touch-none"
+                  />
+                </div>
+
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={clearCanvas}
+                    className="rounded-full border border-[#3f9155] bg-[#0f3f22] px-3 py-1.5 text-xs font-bold text-[#d7f8cd]"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    onClick={completeLearnStroke}
+                    disabled={!hasInk || isLearningWordComplete}
+                    className="rounded-full border border-[#97de9f] bg-[#c6f7b8] px-3 py-1.5 text-xs font-extrabold text-[#1a582d] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {strokeStepIndex >= strokeSteps.length - 1
+                      ? "Finish Character"
+                      : "Next Stroke"}
+                  </button>
+                </div>
+
+                <div className="rounded-xl border border-[#3f9155] bg-[#0f3f22] px-3 py-2 text-xs text-[#c7f0ce]">
+                  <p className="font-extrabold">
+                    Stroke {Math.min(strokeStepIndex + 1, strokeSteps.length)} of {strokeSteps.length}
+                  </p>
+                  <p className="mt-1">{strokeSteps[Math.min(strokeStepIndex, strokeSteps.length - 1)]}</p>
+                  <p className="mt-1 text-[11px] opacity-80">
+                    Character progress: {completedCharIndexes.length}/{characters.length}
+                  </p>
+                  {isLearningWordComplete ? (
+                    <p className="mt-1 text-[11px] font-bold text-[#b8ef99]">
+                      Word stroke learning complete.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-[#3f9155] bg-[#0f3f22] p-3">
+                <p className="mb-2 text-[11px] font-extrabold uppercase tracking-wider text-[#9ddf9f]">
+                  Stroke Guide
+                </p>
+                <div className="space-y-1.5">
+                  {strokeSteps.map((step, index) => (
+                    <div
+                      key={`${selectedCharacter}-${index}`}
+                      className={`rounded-lg px-2.5 py-2 text-[11px] ${
+                        index === strokeStepIndex
+                          ? "bg-[#58cc02] text-white"
+                          : index < strokeStepIndex
+                          ? "bg-[#b8ef99] text-[#184f2b]"
+                          : "bg-[#154a28] text-[#9bc7a2]"
+                      }`}
+                    >
+                      <span className="font-extrabold">{index + 1}. </span>
+                      {step}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

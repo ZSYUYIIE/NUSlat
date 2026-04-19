@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useMilestones } from "@/hooks/useMilestones";
 import AppHeader from "@/components/AppHeader";
+import BackToPreviousButton from "@/components/BackToPreviousButton";
 import { getChaptersByModule } from "@/data/chapters";
 import {
   MODULES,
@@ -101,6 +102,8 @@ export default function LearnPage() {
     <div className="duo-shell min-h-screen">
       <AppHeader />
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+        <BackToPreviousButton fallbackHref="/dashboard" className="mb-4" />
+
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-extrabold uppercase tracking-widest text-[#87a66f]">

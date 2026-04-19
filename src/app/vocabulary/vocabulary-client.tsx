@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import AppHeader from "@/components/AppHeader";
+import BackToPreviousButton from "@/components/BackToPreviousButton";
 import { MODULES } from "@/lib/modules";
 import { playThaiAudio } from "@/lib/audio";
 import WriteModal from "@/components/WriteModal";
@@ -178,6 +179,8 @@ export default function VocabularyClient() {
     <div className="duo-shell min-h-screen">
       <AppHeader />
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
+        <BackToPreviousButton fallbackHref="/" className="mb-4" />
+
         <div className="mb-6">
           <h1 className="text-2xl font-extrabold tracking-tight text-[#2c5015] sm:text-4xl">
             Vocabulary Library

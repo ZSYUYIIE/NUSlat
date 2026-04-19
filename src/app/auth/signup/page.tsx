@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { getProviders, signIn } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import BackToPreviousButton from "@/components/BackToPreviousButton";
 
 export default function SignUpPage() {
   const [name, setName] = useState("");
@@ -144,12 +145,7 @@ export default function SignUpPage() {
     <div className="duo-shell flex min-h-screen items-center justify-center px-4 py-6 sm:py-12">
       <div className="w-full max-w-md lg:max-w-lg">
         <div className="mb-4">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1 text-xs font-bold text-[#5a7c45] hover:text-[#2c5015]"
-          >
-            ← Back to Home
-          </Link>
+          <BackToPreviousButton fallbackHref="/" label="Back" />
         </div>
         {/* Logo */}
         <div className="mb-8 text-center">

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import ModuleCard from "@/components/ModuleCard";
+import BackToPreviousButton from "@/components/BackToPreviousButton";
 import AppHeader from "@/components/AppHeader";
 import { MODULES, getChapterSequence } from "@/lib/modules";
 import { useMilestones } from "@/hooks/useMilestones";
@@ -60,6 +61,8 @@ export default function LearnHub() {
       )}
 
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
+        <BackToPreviousButton fallbackHref="/" className="mb-4" />
+
         <div className="mb-8 text-center sm:mb-10">
           <h1 className="text-2xl font-extrabold tracking-tight text-[#2c5015] sm:text-4xl">
             {isGuest ? "Learn as Guest" : `Welcome to Learn, ${userName}`}
