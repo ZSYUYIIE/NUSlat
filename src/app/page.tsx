@@ -26,13 +26,13 @@ export default async function Home() {
           />
         </div>
         <h1 className="max-w-2xl text-4xl font-extrabold leading-tight tracking-tight text-[#2c5015] sm:text-5xl lg:text-6xl">
-          Learn vocabulary
+          Learn LAT
           <br />
-          <span className="text-[#58cc02]">the fun way</span>
+          <span className="text-[#58cc02]">more efficiently</span>
         </h1>
         <p className="mt-5 max-w-lg text-base leading-relaxed text-[#4d6b3a]">
-          Master 3,000 essential words through a step-by-step learning path.
-          Unlock modules as you progress and build real fluency.
+          Learn LAT more efficiently with a guided path
+          across quizzes, writing practice, and vocabulary review.
         </p>
 
         <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
@@ -139,23 +139,8 @@ export default async function Home() {
 
         <section className="mt-8 w-full max-w-5xl text-left">
           <div className="duo-card p-6">
-            <h3 className="text-xl font-extrabold text-[#2c5015]">Connect</h3>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <a
-                href="https://www.linkedin.com/in/zuyi-li-ba692b327/"
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-3 rounded-xl border border-[#d7f4c9] bg-white px-3 py-3 text-left text-sm font-bold text-[#2c5015]"
-              >
-                <Image
-                  src="/linkedin.png"
-                  alt="LinkedIn logo"
-                  width={24}
-                  height={24}
-                  className="h-6 w-6"
-                />
-                <span className="break-all">https://www.linkedin.com/in/zuyi-li-ba692b327/</span>
-              </a>
+            <h3 className="text-xl font-extrabold text-[#2c5015]">Contact for enquiries</h3>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
 
               <a
                 href="https://t.me/dotiiee"
