@@ -70,7 +70,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="duo-shell min-h-screen">
+    <div className="duo-shell duo-page-offset min-h-screen">
       <AppHeader />
 
       {/* Guest sign-in nudge */}

@@ -8,7 +8,7 @@ export default async function Home() {
   const session = await auth();
 
   return (
-    <div className="duo-shell flex min-h-screen flex-col">
+    <div className="duo-shell duo-page-offset flex min-h-screen flex-col">
       <AppHeader />
 
       <main className="flex flex-1 flex-col items-center justify-center px-6 pb-24 pt-16 text-center sm:px-10">

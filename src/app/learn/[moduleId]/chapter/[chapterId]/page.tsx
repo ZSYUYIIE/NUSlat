@@ -301,7 +301,7 @@ export default function ChapterPracticePage() {
 
   if (isListeningQuiz) {
     return (
-      <div className="duo-shell min-h-screen">
+      <div className="duo-shell duo-page-offset min-h-screen">
         <AppHeader />
         <div className="mx-auto flex w-full max-w-3xl flex-col items-center justify-center gap-4 px-4 py-16 text-center">
           <div className="w-full text-left">
@@ -494,7 +494,7 @@ export default function ChapterPracticePage() {
   }
 
   return (
-    <div className="duo-shell min-h-screen">
+    <div className="duo-shell duo-page-offset min-h-screen">
       <AppHeader />
       <div className="mx-auto w-full max-w-6xl px-4 pt-4 sm:px-6">
         <BackToPreviousButton fallbackHref={`/learn/${moduleId}?quizType=${quizTrack}`} />

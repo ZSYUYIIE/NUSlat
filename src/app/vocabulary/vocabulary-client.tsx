@@ -176,7 +176,7 @@ export default function VocabularyClient() {
         onClose={() => setWritingWord(null)}
       />
     )}
-    <div className="duo-shell min-h-screen">
+    <div className="duo-shell duo-page-offset min-h-screen">
       <AppHeader />
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
         <BackToPreviousButton fallbackHref="/" className="mb-4" />

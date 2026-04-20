@@ -54,7 +54,7 @@ export default function LearnPage() {
 
   if (!moduleData) {
     return (
-      <div className="duo-shell flex min-h-screen flex-col">
+      <div className="duo-shell duo-page-offset flex min-h-screen flex-col">
         <AppHeader />
         <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 text-center">
           <p className="text-4xl">🔍</p>
@@ -99,7 +99,7 @@ export default function LearnPage() {
   };
 
   return (
-    <div className="duo-shell min-h-screen">
+    <div className="duo-shell duo-page-offset min-h-screen">
       <AppHeader />
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
         <BackToPreviousButton fallbackHref="/dashboard" className="mb-4" />

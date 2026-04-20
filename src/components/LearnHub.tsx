@@ -45,7 +45,7 @@ export default function LearnHub() {
   };
 
   return (
-    <div className="duo-shell min-h-screen">
+    <div className="duo-shell duo-page-offset min-h-screen">
       <AppHeader />
 
       {isGuest && (
