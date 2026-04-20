@@ -10,6 +10,11 @@ import {
 } from "@/lib/modules";
 import { useMilestones } from "@/hooks/useMilestones";
 import BackToPreviousButton from "@/components/BackToPreviousButton";
+import {
+  applyThemeMode,
+  getStoredThemeMode,
+  persistThemeMode,
+} from "@/lib/theme";
 
 interface QuestMetric {
   id: string;
@@ -24,8 +29,8 @@ function QuestChest({ claimed }: { claimed: boolean }) {
     <div
       className={`relative h-8 w-10 rounded-md border-2 border-b-4 ${
         claimed
-          ? "border-[#dcb06a] bg-[#ffdd98]"
-          : "border-[#a8bfcc] bg-[#d4e7f0]"
+          ? "border-[#dcb06a] bg-[#ffdd98] dark:border-[#b88945] dark:bg-[#e4b167]"
+          : "border-[#a8bfcc] bg-[#d4e7f0] dark:border-[#3f6177] dark:bg-[#294b61]"
       }`}
       aria-hidden="true"
     >
@@ -54,7 +59,9 @@ export default function AccountPage() {
     const chapterXP = Math.floor(module.xp / module.chapters.length);
     return sum + completedInModule * chapterXP;
   }, 0);
-  const monthLabel = new Date().toLocaleString("en-US", { month: "long" }).toUpperCase();
+  const monthLabel = new Date()
+    .toLocaleString("en-US", { month: "long" })
+    .toUpperCase();
   const monthlyTarget = 30;
   const monthlyProgress = Math.min(
     monthlyTarget,
@@ -85,31 +92,38 @@ export default function AccountPage() {
     },
   ];
 
+  const toggleTheme = () => {
+    const currentMode = getStoredThemeMode();
+    const nextMode = currentMode === "dark" ? "light" : "dark";
+    persistThemeMode(nextMode);
+    applyThemeMode(nextMode);
+  };
+
   return (
-    <div className="duo-shell duo-page-offset min-h-screen">
+    <div className="duo-shell duo-page-offset min-h-screen text-[#273820] dark:text-[#e8f4ff]">
       <AppHeader />
       <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
         <BackToPreviousButton fallbackHref="/" className="mb-4" />
 
-        <h1 className="text-2xl font-extrabold tracking-tight text-[#2c5015] sm:text-4xl">
+        <h1 className="text-2xl font-extrabold tracking-tight text-[#2c5015] dark:text-[#eff8ff] sm:text-4xl">
           Account
         </h1>
-        <p className="mt-2 text-sm text-[#4d6b3a]">
+        <p className="mt-2 text-sm text-[#4d6b3a] dark:text-[#a7bfd0]">
           Manage your identity and session for daily learning.
         </p>
 
-        <section className="duo-card mt-6 overflow-hidden p-0">
-          <div className="bg-[#1daff6] px-6 pb-7 pt-6 text-white">
-            <p className="inline-flex rounded-lg bg-white px-2.5 py-1 text-xs font-black tracking-wide text-[#1daff6]">
+        <section className="duo-card mt-6 overflow-hidden border-[#d6e8f2] bg-white p-0 dark:border-[#2a465c] dark:bg-[#10283a] dark:shadow-[0_8px_0_rgba(0,0,0,0.35)]">
+          <div className="bg-[#1daff6] px-6 pb-7 pt-6 text-white dark:bg-[#157fb7]">
+            <p className="inline-flex rounded-lg bg-white px-2.5 py-1 text-xs font-black tracking-wide text-[#1daff6] dark:bg-[#06273a] dark:text-[#95d8ff]">
               {monthLabel}
             </p>
             <h2 className="mt-4 text-4xl font-black tracking-tight">{monthLabel} Quest</h2>
-            <p className="mt-1 text-sm font-extrabold text-[#caefff]">10 DAYS LEFT</p>
+            <p className="mt-1 text-sm font-extrabold text-[#d9f3ff] dark:text-[#a2daf9]">10 DAYS LEFT</p>
 
-            <div className="mt-7 rounded-2xl bg-[#0a2a3c] p-4 shadow-[0_8px_0_rgba(0,0,0,0.2)]">
-              <p className="text-lg font-extrabold text-white">Complete {monthlyTarget} quests</p>
+            <div className="mt-7 rounded-2xl border border-[#c9dfec] bg-[#f4fbff] p-4 shadow-[0_8px_0_rgba(89,137,168,0.28)] dark:border-[#24475f] dark:bg-[#0a2a3c] dark:shadow-[0_8px_0_rgba(0,0,0,0.2)]">
+              <p className="text-lg font-extrabold text-[#1a3f59] dark:text-white">Complete {monthlyTarget} quests</p>
               <div className="mt-3 flex items-center gap-3">
-                <div className="h-5 flex-1 overflow-hidden rounded-full bg-[#385061]">
+                <div className="h-5 flex-1 overflow-hidden rounded-full bg-[#d6e5ef] dark:bg-[#385061]">
                   <div
                     className="h-full rounded-full bg-[#58cc02] transition-all duration-700"
                     style={{ width: `${(monthlyProgress / monthlyTarget) * 100}%` }}
@@ -117,26 +131,26 @@ export default function AccountPage() {
                 </div>
                 <QuestChest claimed={monthlyProgress >= monthlyTarget} />
               </div>
-              <p className="mt-1 text-center text-sm font-black text-[#d8e8f2]">
+              <p className="mt-1 text-center text-sm font-black text-[#4f6f82] dark:text-[#d8e8f2]">
                 {monthlyProgress} / {monthlyTarget}
               </p>
             </div>
           </div>
 
-          <div className="bg-[#091f2f] px-6 pb-6 pt-5 text-white">
+          <div className="bg-[#f4fbff] px-6 pb-6 pt-5 text-[#1f3a4d] dark:bg-[#091f2f] dark:text-white">
             <div className="mb-4 flex items-center justify-between gap-3">
-              <h3 className="text-3xl font-black tracking-tight">Daily Quests</h3>
+              <h3 className="text-3xl font-black tracking-tight text-[#1f3a4d] dark:text-white">Daily Quests</h3>
               <p className="text-base font-black text-[#ffb73f]">10 HOURS</p>
             </div>
 
             {loading ? (
               <div className="space-y-3 animate-pulse">
-                <div className="h-20 rounded-xl bg-white/10" />
-                <div className="h-20 rounded-xl bg-white/10" />
-                <div className="h-20 rounded-xl bg-white/10" />
+                <div className="h-20 rounded-xl bg-[#d7e6ef] dark:bg-white/10" />
+                <div className="h-20 rounded-xl bg-[#d7e6ef] dark:bg-white/10" />
+                <div className="h-20 rounded-xl bg-[#d7e6ef] dark:bg-white/10" />
               </div>
             ) : (
-              <div className="overflow-hidden rounded-2xl border border-[#2d4a5d] bg-[#0c2738]">
+              <div className="overflow-hidden rounded-2xl border border-[#c9deeb] bg-white dark:border-[#2d4a5d] dark:bg-[#0c2738]">
                 {dailyQuests.map((quest, index) => {
                   const ratio = quest.current / Math.max(quest.target, 1);
                   const claimed = ratio >= 1;
@@ -145,17 +159,19 @@ export default function AccountPage() {
                     <div
                       key={quest.id}
                       className={`px-4 py-4 ${
-                        index < dailyQuests.length - 1 ? "border-b border-[#2d4a5d]" : ""
+                        index < dailyQuests.length - 1
+                          ? "border-b border-[#d7e6ef] dark:border-[#2d4a5d]"
+                          : ""
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#4b6880] bg-[#12344a] text-xs font-black text-[#8ed7ff]">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#bad3e3] bg-[#ebf7ff] text-xs font-black text-[#2877a4] dark:border-[#4b6880] dark:bg-[#12344a] dark:text-[#8ed7ff]">
                           {quest.icon}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-base font-extrabold text-white">{quest.title}</p>
+                          <p className="text-base font-extrabold text-[#1f3a4d] dark:text-white">{quest.title}</p>
                           <div className="mt-2 flex items-center gap-3">
-                            <div className="h-4 flex-1 overflow-hidden rounded-full bg-[#3d5566]">
+                            <div className="h-4 flex-1 overflow-hidden rounded-full bg-[#d7e7f0] dark:bg-[#3d5566]">
                               <div
                                 className="h-full rounded-full bg-[#58cc02] transition-all duration-700"
                                 style={{ width: `${Math.min(100, ratio * 100)}%` }}
@@ -163,7 +179,7 @@ export default function AccountPage() {
                             </div>
                             <QuestChest claimed={claimed} />
                           </div>
-                          <p className="mt-1 text-center text-sm font-black text-[#c8d9e5]">
+                          <p className="mt-1 text-center text-sm font-black text-[#4f6f81] dark:text-[#c8d9e5]">
                             {quest.current} / {quest.target}
                           </p>
                         </div>
@@ -175,13 +191,13 @@ export default function AccountPage() {
             )}
 
             <div className="mt-4 grid gap-2 sm:grid-cols-3">
-              <div className="rounded-xl border border-[#355367] bg-[#0f2d40] px-3 py-2 text-center text-xs font-black text-[#d9ecf8]">
+              <div className="rounded-xl border border-[#c9deeb] bg-white px-3 py-2 text-center text-xs font-black text-[#42657b] dark:border-[#355367] dark:bg-[#0f2d40] dark:text-[#d9ecf8]">
                 CHAPTERS {completedCount}/{allChapterIds.length}
               </div>
-              <div className="rounded-xl border border-[#355367] bg-[#0f2d40] px-3 py-2 text-center text-xs font-black text-[#d9ecf8]">
+              <div className="rounded-xl border border-[#c9deeb] bg-white px-3 py-2 text-center text-xs font-black text-[#42657b] dark:border-[#355367] dark:bg-[#0f2d40] dark:text-[#d9ecf8]">
                 PROGRESS {progressPct}%
               </div>
-              <div className="rounded-xl border border-[#355367] bg-[#0f2d40] px-3 py-2 text-center text-xs font-black text-[#d9ecf8]">
+              <div className="rounded-xl border border-[#c9deeb] bg-white px-3 py-2 text-center text-xs font-black text-[#42657b] dark:border-[#355367] dark:bg-[#0f2d40] dark:text-[#d9ecf8]">
                 XP {totalXP}
               </div>
             </div>
@@ -200,15 +216,15 @@ export default function AccountPage() {
                 return (
                   <div
                     key={module.id}
-                    className="rounded-xl border border-[#2d4a5d] bg-[#0f2d40] px-3 py-2"
+                    className="rounded-xl border border-[#c9deeb] bg-white px-3 py-2 dark:border-[#2d4a5d] dark:bg-[#0f2d40]"
                   >
                     <div className="mb-1 flex items-center justify-between gap-3">
-                      <p className="text-sm font-extrabold text-white">{module.title}</p>
-                      <p className="text-xs font-black text-[#c0d8e5]">
+                      <p className="text-sm font-extrabold text-[#21465d] dark:text-white">{module.title}</p>
+                      <p className="text-xs font-black text-[#5e8094] dark:text-[#c0d8e5]">
                         {completedInModule}/{module.chapters.length} chapters - {moduleEarnedXP} XP
                       </p>
                     </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-[#354e5f]">
+                    <div className="h-2 overflow-hidden rounded-full bg-[#d7e8f1] dark:bg-[#354e5f]">
                       <div
                         className="h-full rounded-full bg-[#58cc02]"
                         style={{ width: `${moduleProgress}%` }}
@@ -227,7 +243,7 @@ export default function AccountPage() {
                       resetProgress();
                     }
                   }}
-                  className="text-xs font-bold text-[#ff9a9a] hover:text-[#ffbcbc]"
+                  className="text-xs font-bold text-[#c44f4f] hover:text-[#a83434] dark:text-[#ff9a9a] dark:hover:text-[#ffbcbc]"
                 >
                   Reset quiz progress
                 </button>
@@ -237,11 +253,11 @@ export default function AccountPage() {
         </section>
 
         {error ? (
-          <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-600">
+          <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-600 dark:border-red-400/30 dark:bg-red-500/15 dark:text-red-200">
             <span>{error}</span>
             <button
               onClick={clearError}
-              className="text-xs text-red-400 hover:text-red-600"
+              className="text-xs text-red-400 hover:text-red-600 dark:text-red-300 dark:hover:text-red-100"
               aria-label="Dismiss error"
             >
               ✕
@@ -249,9 +265,9 @@ export default function AccountPage() {
           </div>
         ) : null}
 
-        <section className="duo-card mt-5 p-6">
-          <h2 className="text-lg font-extrabold text-[#2c5015]">Profile</h2>
-          <div className="mt-4 space-y-2 text-sm text-[#4d6b3a]">
+        <section className="duo-card mt-5 border-[#d6e8f2] bg-white p-6 dark:border-[#2a465c] dark:bg-[#10283a] dark:shadow-[0_8px_0_rgba(0,0,0,0.35)]">
+          <h2 className="text-lg font-extrabold text-[#2c5015] dark:text-[#eff8ff]">Profile</h2>
+          <div className="mt-4 space-y-2 text-sm text-[#4d6b3a] dark:text-[#a7bfd0]">
             <p>
               <strong>Name:</strong> {session?.user?.name ?? "Guest User"}
             </p>
@@ -261,8 +277,8 @@ export default function AccountPage() {
           </div>
         </section>
 
-        <section className="duo-card mt-5 p-6">
-          <h2 className="text-lg font-extrabold text-[#2c5015]">Session Actions</h2>
+        <section className="duo-card mt-5 border-[#d6e8f2] bg-white p-6 dark:border-[#2a465c] dark:bg-[#10283a] dark:shadow-[0_8px_0_rgba(0,0,0,0.35)]">
+          <h2 className="text-lg font-extrabold text-[#2c5015] dark:text-[#eff8ff]">Session Actions</h2>
           <div className="mt-4 flex flex-wrap gap-3">
             {session?.user ? (
               <>
@@ -291,6 +307,18 @@ export default function AccountPage() {
                 Sign In
               </button>
             )}
+          </div>
+
+          <div className="mt-5 border-t border-[#d6e8f2] pt-4 dark:border-[#2a465c]">
+            <p className="text-xs font-extrabold uppercase tracking-wide text-[#6b8b77] dark:text-[#9eb8cc]">
+              Theme Conversion
+            </p>
+            <button
+              onClick={toggleTheme}
+              className="duo-btn-secondary mt-3 px-4 py-2 text-sm"
+            >
+              Switch Light/Dark Mode
+            </button>
           </div>
         </section>
       </main>

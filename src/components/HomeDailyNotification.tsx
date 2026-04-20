@@ -131,21 +131,21 @@ export default function HomeDailyNotification() {
   };
 
   return (
-    <div className="duo-card p-6">
-      <h3 className="text-xl font-extrabold text-[#2c5015]">Daily Notifications</h3>
-      <p className="mt-2 text-sm text-[#4d6b3a]">
+    <div className="duo-card p-6 dark:border-[#2a465c] dark:bg-[#10283a] dark:shadow-[0_8px_0_rgba(0,0,0,0.35)]">
+      <h3 className="text-xl font-extrabold text-[#2c5015] dark:text-[#eef7ff]">Daily Notifications</h3>
+      <p className="mt-2 text-sm text-[#4d6b3a] dark:text-[#9cb9cc]">
         Get one daily email reminder to complete a quiz and earn daily points.
         Learn mode and Daily Quiz reminders are ready to plug in as those features ship.
       </p>
 
-      <div className="mt-4 rounded-xl border border-[#d7f4c9] bg-[#f8fff1] p-4">
-        <label className="flex items-start gap-3 text-sm text-[#2c5015]">
+      <div className="mt-4 rounded-xl border border-[#d7f4c9] bg-[#f8fff1] p-4 dark:border-[#2d5570] dark:bg-[#122d41]">
+        <label className="flex items-start gap-3 text-sm text-[#2c5015] dark:text-[#e3f1fb]">
           <input
             type="checkbox"
             checked={optedIn}
             onChange={(event) => togglePreference(event.target.checked)}
             disabled={isAuthLoading || loading || saving}
-            className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#9bc47a] text-[#58cc02] focus:ring-[#58cc02]"
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#9bc47a] text-[#58cc02] focus:ring-[#58cc02] dark:border-[#4f7993] dark:bg-[#0f2535] dark:text-[#8fd8ff] dark:focus:ring-[#8fd8ff]"
           />
           <span className="font-semibold">
             Tick to opt in for daily reminder emails. Untick to opt out.
@@ -153,36 +153,36 @@ export default function HomeDailyNotification() {
         </label>
 
         {!isSignedIn ? (
-          <p className="mt-2 text-xs text-[#5c7d46]">
+          <p className="mt-2 text-xs text-[#5c7d46] dark:text-[#9eb8c9]">
             You can set this locally now. Sign in to enable email delivery and sync preference. {" "}
             <Link
               href="/auth/signin"
-              className="font-bold text-[#2c5015] underline underline-offset-2"
+              className="font-bold text-[#2c5015] underline underline-offset-2 dark:text-[#8fd8ff]"
             >
               Go to Sign In
             </Link>
           </p>
         ) : (
-          <p className="mt-2 text-xs text-[#5c7d46]">
+          <p className="mt-2 text-xs text-[#5c7d46] dark:text-[#9eb8c9]">
             You can change this anytime from Home.
           </p>
         )}
 
         {loading ? (
-          <p className="mt-3 text-xs font-bold text-[#7f9f69]">
+          <p className="mt-3 text-xs font-bold text-[#7f9f69] dark:text-[#91bbd4]">
             Loading reminder preference...
           </p>
         ) : null}
         {saving ? (
-          <p className="mt-3 text-xs font-bold text-[#7f9f69]">
+          <p className="mt-3 text-xs font-bold text-[#7f9f69] dark:text-[#91bbd4]">
             Saving...
           </p>
         ) : null}
         {message ? (
-          <p className="mt-3 text-xs font-bold text-[#46a302]">{message}</p>
+          <p className="mt-3 text-xs font-bold text-[#46a302] dark:text-[#8be13f]">{message}</p>
         ) : null}
         {error ? (
-          <p className="mt-3 text-xs font-bold text-red-500">{error}</p>
+          <p className="mt-3 text-xs font-bold text-red-500 dark:text-[#ff9b9b]">{error}</p>
         ) : null}
       </div>
     </div>

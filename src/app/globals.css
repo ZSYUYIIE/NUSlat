@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   --background: #f7fff2;
@@ -9,6 +10,13 @@
   --duo-yellow: #ffc800;
   --duo-card: #ffffff;
   --duo-border: #d8ecd3;
+}
+
+:root.dark {
+  --background: #08131d;
+  --foreground: #e8f4ff;
+  --duo-card: #10283a;
+  --duo-border: #2a465c;
 }
 
 @theme inline {
@@ -28,6 +36,13 @@ body {
   background:
     radial-gradient(circle at top left, #eeffd8 0%, transparent 30%),
     radial-gradient(circle at bottom right, #e6f8ff 0%, transparent 22%),
+    var(--background);
+}
+
+html.dark .duo-shell {
+  background:
+    radial-gradient(circle at top left, #112b40 0%, transparent 34%),
+    radial-gradient(circle at bottom right, #102133 0%, transparent 26%),
     var(--background);
 }
 
@@ -55,6 +70,11 @@ body {
   padding: 1.5rem 1rem 1rem;
 }
 
+html.dark .duo-sidebar {
+  border-right-color: #2a465c;
+  background: linear-gradient(180deg, #10293c 0%, #0c1f2f 100%);
+}
+
 .duo-side-link {
   display: flex;
   align-items: center;
@@ -70,15 +90,29 @@ body {
   color: #4d6b3a;
 }
 
+html.dark .duo-side-link-idle {
+  color: #aac4d6;
+}
+
 .duo-side-link-idle:hover {
   background: #ffffff;
   transform: translateX(2px);
+}
+
+html.dark .duo-side-link-idle:hover {
+  background: #13344a;
 }
 
 .duo-side-link-active {
   background: #e8ffd4;
   color: #275a18;
   border: 1px solid #c9e9bb;
+}
+
+html.dark .duo-side-link-active {
+  background: #1a4e69;
+  color: #e8f5ff;
+  border-color: #2f6785;
 }
 
 .duo-side-icon {
@@ -95,6 +129,12 @@ body {
   color: #5c8046;
 }
 
+html.dark .duo-side-icon {
+  border-color: #335d77;
+  background: #123147;
+  color: #8ed7ff;
+}
+
 .duo-card {
   border: 2px solid var(--duo-border);
   border-bottom-width: 6px;
@@ -103,11 +143,21 @@ body {
   box-shadow: 0 8px 0 rgba(149, 182, 132, 0.22);
 }
 
+html.dark .duo-card {
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.35);
+}
+
 .duo-chip {
   border: 2px solid #d8ecd3;
   border-bottom-width: 4px;
   border-radius: 999px;
   background: #f3ffe9;
+}
+
+html.dark .duo-chip {
+  border-color: #2a465c;
+  background: #123147;
+  color: #cce5f5;
 }
 
 .duo-btn-primary {
@@ -137,10 +187,26 @@ body {
   font-weight: 800;
 }
 
+html.dark .duo-btn-secondary {
+  border-color: #32647f;
+  background: #12344a;
+  color: #d6edff;
+}
+
 .duo-input {
   border-radius: 16px;
   border: 2px solid #d6eec6;
   background: #fbfff8;
+}
+
+html.dark .duo-input {
+  border-color: #31556d;
+  background: #0f2b3f;
+  color: #e8f4ff;
+}
+
+html.dark .duo-input::placeholder {
+  color: #9ab7ca;
 }
 
 .duo-input:focus {
