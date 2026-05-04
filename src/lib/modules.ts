@@ -186,6 +186,23 @@ export function isChapterUnlocked(chapterId: string, completedIds: string[]) {
   return completedIds.includes(chapterId) || completedIds.includes(sequence[idx - 1]);
 }
 
+/**
+ * Check if a section is unlocked within its specific component (AKT or PT).
+ * Each component's first section is always unlocked.
+ * Subsequent sections unlock when the previous section in that same component is completed.
+ */
+export function isSectionUnlockedInComponent(
+  sectionId: string,
+  componentSections: Section[],
+  completedIds: string[]
+) {
+  const idx = componentSections.findIndex((s) => s.id === sectionId);
+  if (idx === -1) return false;
+  if (idx === 0) return true; // First section always unlocked
+  if (completedIds.includes(sectionId)) return true; // Already completed
+  return completedIds.includes(componentSections[idx - 1].id);
+}
+
 export function getNextIncompleteChapterInModule(
   moduleId: string,
   completedIds: string[]

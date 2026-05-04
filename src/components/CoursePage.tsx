@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import AppHeader from "@/components/AppHeader";
 import BackToPreviousButton from "@/components/BackToPreviousButton";
 import { useMilestones } from "@/hooks/useMilestones";
-import { type Module, isChapterUnlocked } from "@/lib/modules";
+import { useTesterMode } from "@/hooks/useTesterMode";
+import { type Module, isSectionUnlockedInComponent } from "@/lib/modules";
 
 type TabType = "aan-khian-thai" | "phuut-thai";
 
@@ -15,8 +16,7 @@ interface CoursePageProps {
 
 export default function CoursePage({ module }: CoursePageProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const isTester = searchParams?.get("tester") === "true";
+  const { isTester } = useTesterMode();
   const { completedMilestones, loading } = useMilestones();
   const [activeTab, setActiveTab] = useState<TabType>("aan-khian-thai");
 
@@ -34,8 +34,14 @@ export default function CoursePage({ module }: CoursePageProps) {
   );
 
   const openSection = (sectionId: string) => {
-    if (!isTester && !isChapterUnlocked(sectionId, completedMilestones)) return;
-    router.push(isTester ? `/learn/${module.id}/chapter/${sectionId}?tester=true` : `/learn/${module.id}/chapter/${sectionId}`);
+    if (
+      !isTester &&
+      activeComponent &&
+      !isSectionUnlockedInComponent(sectionId, activeComponent.sections, completedMilestones)
+    ) {
+      return;
+    }
+    router.push(`/learn/${module.id}/chapter/${sectionId}`);
   };
 
   return (
@@ -112,10 +118,13 @@ export default function CoursePage({ module }: CoursePageProps) {
         ) : (
           <div className="space-y-3">
             {activeComponent?.sections.map((section) => {
-              const unlocked = isTester || isChapterUnlocked(
-                section.id,
-                completedMilestones
-              );
+              const unlocked =
+                isTester ||
+                isSectionUnlockedInComponent(
+                  section.id,
+                  activeComponent.sections,
+                  completedMilestones
+                );
               const completed = completedMilestones.includes(section.id);
 
               return (
