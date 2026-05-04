@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import AppHeader from "@/components/AppHeader";
 import BackToPreviousButton from "@/components/BackToPreviousButton";
@@ -10,6 +11,8 @@ import { useMilestones } from "@/hooks/useMilestones";
 export default function LearnHub() {
   const { data: session } = useSession();
   const { completedMilestones, error, clearError, loading } = useMilestones();
+  const searchParams = useSearchParams();
+  const isTester = searchParams?.get("tester") === "true";
 
   const isGuest = !session?.user;
   const userName = session?.user?.name?.split(" ")[0] ?? "Guest";
@@ -106,6 +109,7 @@ export default function LearnHub() {
 
               const prevModule = index > 0 ? MODULES[index - 1] : null;
               const isLocked =
+                !isTester &&
                 !!prevModule &&
                 !prevModule.chapters.every((ch) =>
                   completedMilestones.includes(ch.id)
@@ -198,7 +202,7 @@ export default function LearnHub() {
                   {/* CTA */}
                   {!isLocked && (
                     <Link
-                      href={`/learn/${mod.id}`}
+                      href={isTester ? `/learn/${mod.id}?tester=true` : `/learn/${mod.id}`}
                       className="duo-btn-primary block w-full px-5 py-2.5 text-center text-sm"
                     >
                       {completedCount === 0

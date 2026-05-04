@@ -21,7 +21,13 @@ export default function WriteModal({ thaiWord, phonetic, meaning, onClose }: Pro
   const [strokeStepIndex, setStrokeStepIndex] = useState(0);
   const [completedCharIndexes, setCompletedCharIndexes] = useState<number[]>([]);
 
-  const characters = useMemo(() => thaiWord.split(""), [thaiWord]);
+  const characters = useMemo(() => {
+    if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+      const segmenter = new Intl.Segmenter("th-TH", { granularity: "grapheme" });
+      return Array.from(segmenter.segment(thaiWord)).map(s => s.segment);
+    }
+    return thaiWord.split("");
+  }, [thaiWord]);
   const selectedCharacter = characters[currentCharIndex] ?? characters[0] ?? thaiWord;
   const strokeSteps = useMemo(
     () => getCharacterStrokeGuide(selectedCharacter),
@@ -233,7 +239,7 @@ export default function WriteModal({ thaiWord, phonetic, meaning, onClose }: Pro
           <div className="bg-[#184f2b] p-5 sm:rounded-b-3xl">
             <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
               <div>
-                <p className="text-2xl font-extrabold text-[#ddffe7]">{thaiWord}</p>
+                <p className="thai-char text-2xl font-extrabold text-[#ddffe7]">{thaiWord}</p>
                 <p className="text-xs font-bold text-[#b9e8c0]">
                   {phonetic}
                   {meaning ? ` · ${meaning}` : ""}
@@ -246,7 +252,7 @@ export default function WriteModal({ thaiWord, phonetic, meaning, onClose }: Pro
                       key={`${char}-${index}`}
                       onClick={() => goToCharacterInOrder(index)}
                       disabled={index > firstIncompleteCharIndex}
-                      className={`h-8 w-8 rounded-lg text-base font-extrabold transition-colors ${
+                      className={`thai-char h-8 w-8 rounded-lg text-base font-extrabold transition-colors ${
                         index === currentCharIndex
                           ? "bg-[#58cc02] text-white"
                           : completedCharIndexes.includes(index)
@@ -266,8 +272,8 @@ export default function WriteModal({ thaiWord, phonetic, meaning, onClose }: Pro
                 <div className="relative mb-3 h-72 w-full overflow-hidden rounded-2xl border-2 border-[#3c8d52] bg-[#0f3f22]">
                   <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-3">
                     <span
-                      className="select-none whitespace-nowrap font-extrabold text-[#2c7c40]/60"
-                      style={{ fontSize: "8rem" }}
+                      className="thai-char select-none whitespace-nowrap font-extrabold text-[#2c7c40]/60"
+                      style={{ fontSize: "8rem", lineHeight: "1" }}
                     >
                       {selectedCharacter}
                     </span>

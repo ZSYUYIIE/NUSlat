@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import AppHeader from "@/components/AppHeader";
 import BackToPreviousButton from "@/components/BackToPreviousButton";
 import { useMilestones } from "@/hooks/useMilestones";
@@ -15,6 +15,8 @@ interface CoursePageProps {
 
 export default function CoursePage({ module }: CoursePageProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isTester = searchParams?.get("tester") === "true";
   const { completedMilestones, loading } = useMilestones();
   const [activeTab, setActiveTab] = useState<TabType>("aan-khian-thai");
 
@@ -32,8 +34,8 @@ export default function CoursePage({ module }: CoursePageProps) {
   );
 
   const openSection = (sectionId: string) => {
-    if (!isChapterUnlocked(sectionId, completedMilestones)) return;
-    router.push(`/learn/${module.id}/chapter/${sectionId}`);
+    if (!isTester && !isChapterUnlocked(sectionId, completedMilestones)) return;
+    router.push(isTester ? `/learn/${module.id}/chapter/${sectionId}?tester=true` : `/learn/${module.id}/chapter/${sectionId}`);
   };
 
   return (
@@ -110,7 +112,7 @@ export default function CoursePage({ module }: CoursePageProps) {
         ) : (
           <div className="space-y-3">
             {activeComponent?.sections.map((section) => {
-              const unlocked = isChapterUnlocked(
+              const unlocked = isTester || isChapterUnlocked(
                 section.id,
                 completedMilestones
               );

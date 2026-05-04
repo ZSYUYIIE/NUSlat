@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import AppHeader from "@/components/AppHeader";
 import BackToPreviousButton from "@/components/BackToPreviousButton";
 import LessonViewer from "@/components/LessonViewer";
@@ -16,6 +16,8 @@ type Mode = "learn" | "quiz";
 export default function ChapterPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isTester = searchParams?.get("tester") === "true";
   const moduleId = params?.moduleId as string;
   const chapterId = params?.chapterId as string;
   const { completeModule } = useMilestones();
@@ -57,9 +59,9 @@ export default function ChapterPage() {
   const handleNextSection = () => {
     const nextId = getNextChapterId(chapterId);
     if (nextId) {
-      router.push(`/learn/${moduleId}/chapter/${nextId}`);
+      router.push(isTester ? `/learn/${moduleId}/chapter/${nextId}?tester=true` : `/learn/${moduleId}/chapter/${nextId}`);
     } else {
-      router.push(`/learn/${moduleId}`);
+      router.push(isTester ? `/learn/${moduleId}?tester=true` : `/learn/${moduleId}`);
     }
   };
 
