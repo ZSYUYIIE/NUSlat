@@ -1,9 +1,11 @@
 "use client";
 
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
+import PhoneticAppendix from "./PhoneticAppendix";
 
 interface NavItemProps {
   href: string;
@@ -45,6 +47,7 @@ export default function AppHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
+  const [showAppendix, setShowAppendix] = useState(false);
 
   const isLearnHub = pathname === "/learn";
   const isQuizRoute =
@@ -71,7 +74,8 @@ export default function AppHeader() {
   return (
     <>
       <aside className="duo-sidebar hidden lg:flex">
-        <Link href="/" className="flex items-center gap-2 px-1">
+        <div className="flex items-center gap-2 px-1">
+          <Link href="/" className="flex items-center gap-2">
           <Image
             src="/Logo.png"
             alt="NUSlat logo"
@@ -80,8 +84,16 @@ export default function AppHeader() {
             className="h-9 w-9 rounded-xl object-contain"
             priority
           />
-          <span className="text-xl font-black tracking-tight text-[#2d4e21]">NUSlat</span>
-        </Link>
+            <span className="text-xl font-black tracking-tight text-[#2d4e21]">NUSlat</span>
+          </Link>
+          <button
+            onClick={() => setShowAppendix(true)}
+            className="ml-auto rounded bg-[#f2f6ef] px-2 py-1 text-xs font-semibold"
+            aria-label="Open appendix"
+          >
+            Phonetics
+          </button>
+        </div>
 
         <nav className="mt-6 flex flex-col gap-2">
           {navItems.map((item) => (
@@ -125,6 +137,12 @@ export default function AppHeader() {
             />
             <span className="text-base font-black tracking-tight text-[#2d4e21]">NUSlat</span>
           </Link>
+          <button
+            onClick={() => setShowAppendix(true)}
+            className="duo-btn-secondary px-3 py-1.5 text-xs"
+          >
+            Phonetics
+          </button>
           {session?.user ? (
             <button
               onClick={() => signOut({ callbackUrl: "/auth/signin" })}
@@ -152,6 +170,7 @@ export default function AppHeader() {
           ))}
         </nav>
       </header>
+      <PhoneticAppendix open={showAppendix} onClose={() => setShowAppendix(false)} />
     </>
   );
 }
