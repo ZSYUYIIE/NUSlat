@@ -354,7 +354,7 @@ export default function PhoneticAppendix({ open, onClose }: Props) {
                 <tbody>
                   <tr>
                     <td className="border border-black px-3 py-2 font-bold">h</td>
-                    <td className="border border-black px-3 py-2">hĕn</td>
+                    <td className="border border-black px-3 py-2">hěn</td>
                     <td className="border border-black px-3 py-2">see</td>
                     <td className="border border-black px-3 py-2">h</td>
                     <td className="border border-black px-3 py-2 font-bold">?</td>
