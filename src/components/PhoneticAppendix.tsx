@@ -354,21 +354,21 @@ export default function PhoneticAppendix({ open, onClose }: Props) {
                 <tbody>
                   <tr>
                     <td className="border border-black px-3 py-2 font-bold">h</td>
-                    <td className="border border-black px-3 py-2">hěn</td>
+                    <td className="border border-black px-3 py-2">hĕn</td>
                     <td className="border border-black px-3 py-2">see</td>
                     <td className="border border-black px-3 py-2">h</td>
                     <td className="border border-black px-3 py-2 font-bold">?</td>
-                    <td className="border border-black px-3 py-2">?it</td>
+                    <td className="border border-black px-3 py-2">ʔìt</td>
                     <td className="border border-black px-3 py-2">brick</td>
                     <td className="border border-black px-3 py-2">it</td>
                   </tr>
                   <tr>
                     <td className="border border-black px-3 py-2 font-bold">ph</td>
-                    <td className="border border-black px-3 py-2">phit</td>
+                    <td className="border border-black px-3 py-2">phìt</td>
                     <td className="border border-black px-3 py-2">wrong</td>
                     <td className="border border-black px-3 py-2">p</td>
                     <td className="border border-black px-3 py-2 font-bold">p</td>
-                    <td className="border border-black px-3 py-2">pèèt</td>
+                    <td className="border border-black px-3 py-2">pɛ̀ɛt</td>
                     <td className="border border-black px-3 py-2">eight</td>
                     <td className="border border-black px-3 py-2">p-b</td>
                   </tr>
@@ -384,7 +384,7 @@ export default function PhoneticAppendix({ open, onClose }: Props) {
                   </tr>
                   <tr>
                     <td className="border border-black px-3 py-2 font-bold">ch</td>
-                    <td className="border border-black px-3 py-2">chiit</td>
+                    <td className="border border-black px-3 py-2">chìit</td>
                     <td className="border border-black px-3 py-2">inject</td>
                     <td className="border border-black px-3 py-2">ch</td>
                     <td className="border border-black px-3 py-2 font-bold">c</td>
@@ -404,7 +404,7 @@ export default function PhoneticAppendix({ open, onClose }: Props) {
                   </tr>
                   <tr>
                     <td className="border border-black px-3 py-2 font-bold">b</td>
-                    <td className="border border-black px-3 py-2">bòy</td>
+                    <td className="border border-black px-3 py-2">bɔ̀y</td>
                     <td className="border border-black px-3 py-2">often</td>
                     <td className="border border-black px-3 py-2">b</td>
                     <td className="border border-black px-3 py-2 font-bold">f</td>
@@ -438,17 +438,17 @@ export default function PhoneticAppendix({ open, onClose }: Props) {
                     <td className="border border-black px-3 py-2">rotten</td>
                     <td className="border border-black px-3 py-2">n</td>
                     <td className="border border-black px-3 py-2 font-bold">w</td>
-                    <td className="border border-black px-3 py-2">wii</td>
+                    <td className="border border-black px-3 py-2">wǐi</td>
                     <td className="border border-black px-3 py-2">comb</td>
                     <td className="border border-black px-3 py-2">w</td>
                   </tr>
                   <tr>
                     <td className="border border-black px-3 py-2 font-bold">ŋ</td>
-                    <td className="border border-black px-3 py-2">yuu</td>
+                    <td className="border border-black px-3 py-2">ŋuu</td>
                     <td className="border border-black px-3 py-2">snake</td>
                     <td className="border border-black px-3 py-2">sing</td>
                     <td className="border border-black px-3 py-2 font-bold">l</td>
-                    <td className="border border-black px-3 py-2">lêɛk</td>
+                    <td className="border border-black px-3 py-2">lɛ̂ɛk</td>
                     <td className="border border-black px-3 py-2">exchange</td>
                     <td className="border border-black px-3 py-2">l</td>
                   </tr>
@@ -458,7 +458,7 @@ export default function PhoneticAppendix({ open, onClose }: Props) {
                     <td className="border border-black px-3 py-2" />
                     <td className="border border-black px-3 py-2" />
                     <td className="border border-black px-3 py-2 font-bold">r</td>
-                    <td className="border border-black px-3 py-2">rêek</td>
+                    <td className="border border-black px-3 py-2">rɛ̂ɛk</td>
                     <td className="border border-black px-3 py-2">first</td>
                     <td className="border border-black px-3 py-2">r</td>
                   </tr>
