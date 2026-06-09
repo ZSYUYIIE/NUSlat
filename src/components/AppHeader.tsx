@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import PhoneticAppendix from "./PhoneticAppendix";
+import { usePhoneticAppendix } from "./PhoneticAppendixContext";
 
 interface NavItemProps {
   href: string;
@@ -47,7 +47,7 @@ export default function AppHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
-  const [showAppendix, setShowAppendix] = useState(false);
+  const { isOpen, toggleAppendix } = usePhoneticAppendix();
 
   const isLearnHub = pathname === "/learn";
   const isQuizRoute =
@@ -87,11 +87,13 @@ export default function AppHeader() {
             <span className="text-xl font-black tracking-tight text-[#2d4e21]">NUSlat</span>
           </Link>
           <button
-            onClick={() => setShowAppendix(true)}
-            className="ml-auto rounded bg-[#f2f6ef] px-2 py-1 text-xs font-semibold"
-            aria-label="Open appendix"
+            type="button"
+            onClick={toggleAppendix}
+            className="ml-auto rounded-full border border-[#d8ecd3] bg-[#f2f6ef] px-3 py-1.5 text-xs font-bold text-[#35582a] shadow-sm transition hover:bg-[#eaf7d7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#58cc02]"
+            aria-label={isOpen ? "Hide appendix" : "Open appendix"}
+            aria-pressed={isOpen}
           >
-            Phonetics
+            Appendix
           </button>
         </div>
 
@@ -138,10 +140,13 @@ export default function AppHeader() {
             <span className="text-base font-black tracking-tight text-[#2d4e21]">NUSlat</span>
           </Link>
           <button
-            onClick={() => setShowAppendix(true)}
+            type="button"
+            onClick={toggleAppendix}
             className="duo-btn-secondary px-3 py-1.5 text-xs"
+            aria-label={isOpen ? "Hide appendix" : "Open appendix"}
+            aria-pressed={isOpen}
           >
-            Phonetics
+            Appendix
           </button>
           {session?.user ? (
             <button
@@ -170,7 +175,6 @@ export default function AppHeader() {
           ))}
         </nav>
       </header>
-      <PhoneticAppendix open={showAppendix} onClose={() => setShowAppendix(false)} />
     </>
   );
 }
