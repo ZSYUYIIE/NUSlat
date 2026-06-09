@@ -1,3 +1,5 @@
+import { PT_SECTION_SUMMARIES } from "@/data/phuutThaiData";
+
 export interface Module {
   id: string;
   title: string;
@@ -26,6 +28,8 @@ export interface Section {
   title: string;
   order: number;
   type: "learn" | "quiz";
+  chapterNumber?: number;
+  letter?: string;
 }
 
 export interface Chapter {
@@ -64,23 +68,21 @@ const AKT_LAT2201_SECTIONS: Section[] = [
   { id: "akt-l21", title: "Lesson 21: Miscellaneous", order: 10, type: "learn" },
 ];
 
-// --- Phuut Thai sections for LAT1201 ---
-const PT_LAT1201_SECTIONS: Section[] = [
-  { id: "pt-ch1", title: "Chapter 1: At First Sight", order: 1, type: "learn" },
-  { id: "pt-ch2", title: "Chapter 2: Snooping", order: 2, type: "learn" },
-  { id: "pt-ch3", title: "Chapter 3: Identifying", order: 3, type: "learn" },
-  { id: "pt-ch4", title: "Chapter 4: To Possess or Not to Possess", order: 4, type: "learn" },
-  { id: "pt-ch5", title: "Chapter 5: Comparing", order: 5, type: "learn" },
-];
+function buildPtSections(courseId: "lat1201" | "lat2201"): Section[] {
+  return PT_SECTION_SUMMARIES.filter((section) => section.courseId === courseId).map(
+    (section, index) => ({
+      id: section.id,
+      title: `Chapter ${section.chapterNumber}${section.letter}: ${section.title}`,
+      order: index + 1,
+      type: "learn",
+      chapterNumber: section.chapterNumber,
+      letter: section.letter,
+    })
+  );
+}
 
-// --- Phuut Thai sections for LAT2201 ---
-const PT_LAT2201_SECTIONS: Section[] = [
-  { id: "pt-ch6", title: "Chapter 6: True Thai", order: 1, type: "learn" },
-  { id: "pt-ch7", title: "Chapter 7: When It Comes to Numbers", order: 2, type: "learn" },
-  { id: "pt-ch8", title: "Chapter 8: Space and Time", order: 3, type: "learn" },
-  { id: "pt-ch9", title: "Chapter 9: Give and Take", order: 4, type: "learn" },
-  { id: "pt-ch10", title: "Chapter 10: The Story of Takeshi", order: 5, type: "learn" },
-];
+const PT_LAT1201_SECTIONS = buildPtSections("lat1201");
+const PT_LAT2201_SECTIONS = buildPtSections("lat2201");
 
 export const MODULES: Module[] = [
   {
@@ -90,7 +92,7 @@ export const MODULES: Module[] = [
     description: "Thai Language Level 1 — Build foundations in reading, writing, and conversational Thai.",
     xp: 1000,
     icon: "🌱",
-    lessons: 17,
+    lessons: AKT_LAT1201_SECTIONS.length + PT_LAT1201_SECTIONS.length,
     chapters: [
       // Aan Khian Thai chapters
       ...AKT_LAT1201_SECTIONS.map((s) => ({ id: s.id, title: s.title, order: s.order })),
@@ -124,7 +126,7 @@ export const MODULES: Module[] = [
     description: "Thai Language Level 2 — Advance your writing system mastery and conversational fluency.",
     xp: 2000,
     icon: "🌿",
-    lessons: 15,
+    lessons: AKT_LAT2201_SECTIONS.length + PT_LAT2201_SECTIONS.length,
     chapters: [
       ...AKT_LAT2201_SECTIONS.map((s) => ({ id: s.id, title: s.title, order: s.order })),
       ...PT_LAT2201_SECTIONS.map((s) => ({ id: s.id, title: s.title, order: s.order + 100 })),
@@ -235,7 +237,12 @@ export function normalizeProgressIds(ids: string[]) {
     const moduleData = MODULES.find((m) => m.id === id);
     if (moduleData) {
       moduleData.chapters.forEach((chapter) => normalized.add(chapter.id));
+      continue;
     }
+
+    PT_SECTION_SUMMARIES.filter((section) => section.legacyChapterId === id).forEach(
+      (section) => normalized.add(section.id)
+    );
   }
   return getChapterSequence().filter((id) => normalized.has(id));
 }

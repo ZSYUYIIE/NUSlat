@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import AppHeader from "@/components/AppHeader";
 import BackToPreviousButton from "@/components/BackToPreviousButton";
 import LessonViewer from "@/components/LessonViewer";
 import SectionQuiz from "@/components/SectionQuiz";
 import { useMilestones } from "@/hooks/useMilestones";
-import { MODULES, getNextChapterId } from "@/lib/modules";
+import { MODULES } from "@/lib/modules";
 import { getAktLessonById } from "@/data/aanKhianThaiData";
-import { getPtChapterById } from "@/data/phuutThaiData";
+import { getPtSectionById } from "@/data/phuutThaiData";
 
 type Mode = "learn" | "quiz";
 
@@ -21,61 +22,75 @@ export default function ChapterPage() {
   const moduleId = params?.moduleId as string;
   const chapterId = params?.chapterId as string;
   const { completeModule } = useMilestones();
-
   const [mode, setMode] = useState<Mode>("learn");
 
-  const moduleData = MODULES.find((m) => m.id === moduleId);
-
+  const moduleData = MODULES.find((module) => module.id === moduleId);
   const aktLesson = useMemo(() => getAktLessonById(chapterId), [chapterId]);
-  const ptChapter = useMemo(() => getPtChapterById(chapterId), [chapterId]);
+  const ptSection = useMemo(() => getPtSectionById(chapterId), [chapterId]);
+  const componentSections = useMemo(
+    () =>
+      moduleData?.components.find((component) =>
+        component.sections.some((section) => section.id === chapterId)
+      )?.sections ?? [],
+    [chapterId, moduleData]
+  );
+  const nextSectionId = useMemo(() => {
+    const currentIndex = componentSections.findIndex(
+      (section) => section.id === chapterId
+    );
+    return currentIndex >= 0
+      ? componentSections[currentIndex + 1]?.id ?? null
+      : null;
+  }, [chapterId, componentSections]);
 
   const quizQuestions = useMemo(() => {
     if (aktLesson) return aktLesson.quizQuestions;
-    if (ptChapter) return ptChapter.quizQuestions;
+    if (ptSection) return ptSection.quizQuestions;
     return [];
-  }, [aktLesson, ptChapter]);
+  }, [aktLesson, ptSection]);
 
-  const sectionTitle = aktLesson?.title ?? ptChapter?.title ?? chapterId;
+  const sectionTitle =
+    aktLesson?.title ??
+    (ptSection
+      ? `Chapter ${ptSection.chapterNumber}${ptSection.letter}: ${ptSection.title}`
+      : chapterId);
 
   if (!moduleData) {
     return (
       <div className="duo-shell duo-page-offset flex min-h-screen flex-col">
         <AppHeader />
         <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 text-center">
-          <p className="text-4xl">🔍</p>
+          <p className="text-4xl font-black text-[#58cc02]">?</p>
           <h1 className="text-xl font-extrabold text-[#2c5015]">Not found</h1>
-          <a href="/learn" className="duo-btn-primary px-6 py-2.5 text-sm">
+          <Link href="/learn" className="duo-btn-primary px-6 py-2.5 text-sm">
             Back to Courses
-          </a>
+          </Link>
         </div>
       </div>
     );
   }
 
-  const handleQuizComplete = async () => {
-    await completeModule(chapterId);
+  const handleQuizComplete = () => {
+    void completeModule(chapterId);
   };
 
   const handleNextSection = () => {
-    const nextId = getNextChapterId(chapterId);
-    if (nextId) {
-      router.push(isTester ? `/learn/${moduleId}/chapter/${nextId}?tester=true` : `/learn/${moduleId}/chapter/${nextId}`);
-    } else {
-      router.push(isTester ? `/learn/${moduleId}?tester=true` : `/learn/${moduleId}`);
+    setMode("learn");
+    if (nextSectionId) {
+      const testerQuery = isTester ? "?tester=true" : "";
+      router.push(`/learn/${moduleId}/chapter/${nextSectionId}${testerQuery}`);
+      return;
     }
+    router.push(isTester ? `/learn/${moduleId}?tester=true` : `/learn/${moduleId}`);
   };
 
   return (
     <div className="duo-shell duo-page-offset min-h-screen">
       <AppHeader />
       <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
-        <BackToPreviousButton
-          fallbackHref={`/learn/${moduleId}`}
-          className="mb-4"
-        />
+        <BackToPreviousButton fallbackHref={`/learn/${moduleId}`} className="mb-4" />
 
-        {/* Mode toggle */}
-        <div className="mb-6 flex items-center gap-2">
+        <div className="mb-6 flex flex-wrap items-center gap-2">
           <button
             onClick={() => setMode("learn")}
             className={`rounded-xl px-4 py-2 text-xs font-extrabold transition-colors ${
@@ -84,7 +99,7 @@ export default function ChapterPage() {
                 : "border border-[#d8ecd3] bg-white text-[#4d6b3a]"
             }`}
           >
-            📖 Learn
+            1. Learn
           </button>
           <button
             onClick={() => setMode("quiz")}
@@ -94,20 +109,19 @@ export default function ChapterPage() {
                 : "border border-[#d8ecd3] bg-white text-[#4d6b3a]"
             }`}
           >
-            ✍️ Quiz
+            2. Quiz
           </button>
-          <button
-            onClick={handleNextSection}
-            className="ml-auto text-xs font-bold text-[#6f8f58] hover:text-[#2c5015]"
-          >
-            Next Section →
-          </button>
+          {ptSection ? (
+            <span className="ml-auto text-xs font-bold text-[#6f8f58]">
+              Learn → exercise → next section
+            </span>
+          ) : null}
         </div>
 
         {mode === "learn" ? (
           <LessonViewer
             aktLesson={aktLesson}
-            ptChapter={ptChapter}
+            ptSection={ptSection}
             onStartQuiz={() => setMode("quiz")}
           />
         ) : (
@@ -116,6 +130,10 @@ export default function ChapterPage() {
             sectionTitle={sectionTitle}
             onComplete={handleQuizComplete}
             onBackToLearn={() => setMode("learn")}
+            onContinue={handleNextSection}
+            continueLabel={
+              nextSectionId ? "Continue to Next Section" : "Back to Course"
+            }
           />
         )}
       </main>

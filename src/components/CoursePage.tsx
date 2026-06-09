@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppHeader from "@/components/AppHeader";
 import BackToPreviousButton from "@/components/BackToPreviousButton";
@@ -21,27 +21,34 @@ export default function CoursePage({ module }: CoursePageProps) {
   const [activeTab, setActiveTab] = useState<TabType>("aan-khian-thai");
 
   const activeComponent = useMemo(
-    () => module.components.find((c) => c.type === activeTab),
-    [module, activeTab]
+    () => module.components.find((component) => component.type === activeTab),
+    [activeTab, module.components]
   );
+  const sections = activeComponent?.sections ?? [];
 
-  const completedCount = module.chapters.filter((ch) =>
-    completedMilestones.includes(ch.id)
+  const completedCount = module.chapters.filter((chapter) =>
+    completedMilestones.includes(chapter.id)
   ).length;
   const totalCount = module.chapters.length;
-  const progressPct = Math.round(
-    (completedCount / Math.max(totalCount, 1)) * 100
-  );
+  const progressPct = Math.round((completedCount / Math.max(totalCount, 1)) * 100);
 
   const openSection = (sectionId: string) => {
     if (
       !isTester &&
       activeComponent &&
-      !isSectionUnlockedInComponent(sectionId, activeComponent.sections, completedMilestones)
+      !isSectionUnlockedInComponent(
+        sectionId,
+        activeComponent.sections,
+        completedMilestones
+      )
     ) {
       return;
     }
-    router.push(`/learn/${module.id}/chapter/${sectionId}`);
+    router.push(
+      isTester
+        ? `/learn/${module.id}/chapter/${sectionId}?tester=true`
+        : `/learn/${module.id}/chapter/${sectionId}`
+    );
   };
 
   return (
@@ -50,7 +57,6 @@ export default function CoursePage({ module }: CoursePageProps) {
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
         <BackToPreviousButton fallbackHref="/learn" className="mb-4" />
 
-        {/* Course header */}
         <div className="mb-6">
           <p className="text-xs font-extrabold uppercase tracking-widest text-[#87a66f]">
             {module.id.toUpperCase()}
@@ -62,7 +68,6 @@ export default function CoursePage({ module }: CoursePageProps) {
           <p className="mt-2 text-sm text-[#4d6b3a]">{module.description}</p>
         </div>
 
-        {/* Progress bar */}
         <div className="duo-card mb-6 p-5 sm:p-6">
           <div className="mb-3 flex items-center justify-between text-sm font-bold text-[#2c5015]">
             <span>Course Progress</span>
@@ -79,7 +84,6 @@ export default function CoursePage({ module }: CoursePageProps) {
           </p>
         </div>
 
-        {/* Tab switcher */}
         <div className="mb-6 grid grid-cols-2 gap-2 rounded-2xl border border-[#d7f4c9] bg-[#f8ffef] p-2">
           <button
             onClick={() => setActiveTab("aan-khian-thai")}
@@ -89,7 +93,7 @@ export default function CoursePage({ module }: CoursePageProps) {
                 : "bg-white text-[#4d6b3a] hover:text-[#2c5015]"
             }`}
           >
-            📖 อ่านเขียนไทย
+            อ่านเขียนไทย
             <span className="block text-[10px] font-bold opacity-80">
               Aan Khian Thai
             </span>
@@ -102,14 +106,20 @@ export default function CoursePage({ module }: CoursePageProps) {
                 : "bg-white text-[#4d6b3a] hover:text-[#2c5015]"
             }`}
           >
-            🗣️ พูดไทย
+            พูดไทย
             <span className="block text-[10px] font-bold opacity-80">
               Phuut Thai
             </span>
           </button>
         </div>
 
-        {/* Section list */}
+        {activeTab === "phuut-thai" ? (
+          <div className="mb-5 rounded-2xl border border-[#cfe8ff] bg-[#f3f9ff] p-4 text-sm text-[#245d8a]">
+            Follow the textbook order inside each letter: learn the dialogue or
+            reading, complete its exercise quiz, then continue to the next letter.
+          </div>
+        ) : null}
+
         {loading ? (
           <div className="duo-card animate-pulse p-6">
             <div className="mb-4 h-3 w-40 rounded-full bg-neutral-100" />
@@ -117,60 +127,76 @@ export default function CoursePage({ module }: CoursePageProps) {
           </div>
         ) : (
           <div className="space-y-3">
-            {activeComponent?.sections.map((section) => {
+            {sections.map((section, sectionIndex) => {
               const unlocked =
                 isTester ||
                 isSectionUnlockedInComponent(
                   section.id,
-                  activeComponent.sections,
+                  sections,
                   completedMilestones
                 );
               const completed = completedMilestones.includes(section.id);
+              const previousSection = sections[sectionIndex - 1];
+              const startsChapter =
+                activeTab === "phuut-thai" &&
+                section.chapterNumber !== previousSection?.chapterNumber;
 
               return (
-                <div
-                  key={section.id}
-                  className={`duo-card p-5 transition-all duration-200 ${
-                    unlocked && !completed
-                      ? "cursor-pointer hover:-translate-y-0.5"
-                      : !unlocked
-                      ? "opacity-50"
-                      : ""
-                  }`}
-                  onClick={() => openSection(section.id)}
-                  role="button"
-                  tabIndex={unlocked ? 0 : -1}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && unlocked) openSection(section.id);
-                  }}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-black ${
-                          completed
-                            ? "bg-[#58cc02] text-white"
-                            : unlocked
-                            ? "border-2 border-[#cae6bf] bg-[#f8ffef] text-[#2c5015]"
-                            : "bg-neutral-100 text-neutral-400"
-                        }`}
-                      >
-                        {completed ? "✓" : section.order}
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-extrabold text-[#2c5015]">
-                          {section.title}
-                        </h3>
-                        <p className="text-xs text-[#6f8f58]">
-                          {completed
-                            ? "Completed — tap to review"
-                            : unlocked
-                            ? "Ready to learn"
-                            : "Complete previous section first"}
-                        </p>
-                      </div>
+                <Fragment key={section.id}>
+                  {startsChapter ? (
+                    <div className="mb-3 mt-7 flex items-center gap-3">
+                      <span className="rounded-full bg-[#2c5015] px-3 py-1 text-xs font-extrabold text-white">
+                        Chapter {section.chapterNumber}
+                      </span>
+                      <div className="h-px flex-1 bg-[#d8ecd3]" />
                     </div>
-                    <div className="flex items-center gap-2">
+                  ) : null}
+                  <div
+                    className={`duo-card p-5 transition-all duration-200 ${
+                      unlocked && !completed
+                        ? "cursor-pointer hover:-translate-y-0.5"
+                        : !unlocked
+                        ? "opacity-50"
+                        : ""
+                    }`}
+                    onClick={() => openSection(section.id)}
+                    role="button"
+                    tabIndex={unlocked ? 0 : -1}
+                    onKeyDown={(event) => {
+                      if ((event.key === "Enter" || event.key === " ") && unlocked) {
+                        event.preventDefault();
+                        openSection(section.id);
+                      }
+                    }}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-black ${
+                            completed
+                              ? "bg-[#58cc02] text-white"
+                              : unlocked
+                              ? "border-2 border-[#cae6bf] bg-[#f8ffef] text-[#2c5015]"
+                              : "bg-neutral-100 text-neutral-400"
+                          }`}
+                        >
+                          {completed ? "✓" : section.letter ?? section.order}
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-extrabold text-[#2c5015]">
+                            {section.title}
+                          </h3>
+                          <p className="text-xs text-[#6f8f58]">
+                            {completed
+                              ? "Completed - tap to review"
+                              : unlocked
+                              ? activeTab === "phuut-thai"
+                                ? "Learn, then complete the matching exercise"
+                                : "Ready to learn"
+                              : "Complete previous section first"}
+                          </p>
+                        </div>
+                      </div>
                       <span
                         className={`rounded-full px-2 py-1 text-[11px] font-extrabold ${
                           completed
@@ -180,15 +206,11 @@ export default function CoursePage({ module }: CoursePageProps) {
                             : "bg-neutral-100 text-neutral-500"
                         }`}
                       >
-                        {completed
-                          ? "Done"
-                          : unlocked
-                          ? "Unlocked"
-                          : "Locked"}
+                        {completed ? "Done" : unlocked ? "Unlocked" : "Locked"}
                       </span>
                     </div>
                   </div>
-                </div>
+                </Fragment>
               );
             })}
           </div>
